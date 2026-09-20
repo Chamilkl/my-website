@@ -378,6 +378,21 @@ body {
   border-color: var(--accent-light);
 }
 
+/* IoT Node Tab Buttons */
+.iot-node-tab-btn {
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.iot-node-tab-btn:hover,
+.iot-node-tab-btn.active {
+  background: rgba(51, 65, 85, 0.9);
+  color: #ffffff;
+  border-color: #64748b;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
 /* Quick Search Key Kbd */
 kbd {
   background-color: rgba(51, 65, 85, 0.5);
@@ -391,5 +406,48 @@ kbd {
   font-weight: 600;
   line-height: 1;
   padding: 3px 6px;
+}
+
+/* ==========================================
+   C++ Code Block (Circuit & Source Viewer)
+   ========================================== */
+.cpp-code-block {
+  background: #0d1117;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  line-height: 1.65;
+  tab-size: 2;
+  -moz-tab-size: 2;
+  font-family: 'Fira Code', 'Cascadia Code', 'Courier New', Courier, monospace;
+  min-height: 300px;
+}
+
+/* Code Tab Buttons */
+.cc-tab-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+.cc-tab-btn:hover,
+.cc-tab-btn.active {
+  background: rgba(51, 65, 85, 0.8);
+  color: #f8fafc;
+  border-color: #64748b;
+}
+
+/* PWA Banner Animation */
+#pwaInstallBanner {
+  animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(100%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Cert Lightbox iframe */
+#certIframe {
+  border: none;
+  background: #fff;
 }
 

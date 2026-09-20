@@ -20,6 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initScrollAnimations();
   initIoTSimulator();
   initLanguage();
+  initPWA();
+  initCertFilterDelegation();
 });
 
 /* ==========================================
@@ -124,15 +126,33 @@ function _applyLanguage(lang) {
 
 
 /* ==========================================
-   IoT Simulator - Tech Lab Section
+   IoT Simulator - Tech Lab Section (Multi-Node Interactive)
    ========================================== */
 const _iotState = {
+  activeNode: 1,
+
+  // Node 1: Power & Energy
   relay1: false,
   relay2: false,
   voltage: 220.4,
   current: 1.85,
   overload: false,
   overloadTimeout: null,
+
+  // Node 2: Weather & PM2.5
+  temp: 28.4,
+  humid: 64.2,
+  dust: 38.0,
+  purifierOn: false,
+  mistOn: false,
+  smokeActive: false,
+
+  // Node 3: Access Control & Security
+  doorLocked: true,
+  sirenOn: false,
+  accessCount: 14,
+  lastLog: 'LOG: ID #A8-F3 (PASS)',
+
   intervalId: null
 };
 
@@ -141,19 +161,65 @@ function initIoTSimulator() {
   _iotState.intervalId = setInterval(_iotTickSensor, 1500);
 }
 
+function switchIoTNode(nodeNum) {
+  _iotState.activeNode = nodeNum;
+
+  // Toggle Tab content visibility
+  for (let i = 1; i <= 3; i++) {
+    const tabEl = document.getElementById(`iotNodeTab-${i}`);
+    const btnEl = document.getElementById(`labNodeBtn-${i}`);
+
+    if (tabEl) {
+      if (i === nodeNum) {
+        tabEl.classList.remove('hidden');
+      } else {
+        tabEl.classList.add('hidden');
+      }
+    }
+
+    if (btnEl) {
+      if (i === nodeNum) {
+        btnEl.classList.add('active', 'text-slate-100');
+        btnEl.classList.remove('text-slate-400');
+      } else {
+        btnEl.classList.remove('active', 'text-slate-100');
+        btnEl.classList.add('text-slate-400');
+      }
+    }
+  }
+
+  _iotUpdateDisplay();
+}
+
 function _iotTickSensor() {
-  if (_iotState.overload) return; // overload mode handles its own updates
+  // NODE 1 Simulation
+  if (!_iotState.overload) {
+    const activeRelays = (_iotState.relay1 ? 1 : 0) + (_iotState.relay2 ? 1 : 0);
+    const baseLoad = 0.3 + activeRelays * 0.85;
+    _iotState.voltage = parseFloat((220 + (Math.random() - 0.5) * 1.2).toFixed(1));
+    _iotState.current = parseFloat((baseLoad + (Math.random() - 0.5) * 0.15).toFixed(2));
+  }
 
-  // Simulate natural fluctuation
-  const activeRelays = (_iotState.relay1 ? 1 : 0) + (_iotState.relay2 ? 1 : 0);
-  const baseLoad = 0.3 + activeRelays * 0.85;
+  // NODE 2 Simulation
+  if (_iotState.mistOn) {
+    _iotState.humid = Math.min(88, parseFloat((_iotState.humid + 0.8 + Math.random() * 0.3).toFixed(1)));
+    _iotState.temp = Math.max(24, parseFloat((_iotState.temp - 0.15).toFixed(1)));
+  } else {
+    _iotState.temp = parseFloat((28.4 + (Math.random() - 0.5) * 0.4).toFixed(1));
+    _iotState.humid = parseFloat((64.2 + (Math.random() - 0.5) * 0.8).toFixed(1));
+  }
 
-  _iotState.voltage = parseFloat((220 + (Math.random() - 0.5) * 1.2).toFixed(1));
-  _iotState.current = parseFloat((baseLoad + (Math.random() - 0.5) * 0.15).toFixed(2));
+  if (_iotState.purifierOn) {
+    _iotState.dust = Math.max(8, parseFloat((_iotState.dust - 4.2 - Math.random() * 2).toFixed(1)));
+  } else if (!_iotState.smokeActive) {
+    _iotState.dust = parseFloat((38 + (Math.random() - 0.5) * 3).toFixed(1));
+  }
+
   _iotUpdateDisplay();
 }
 
 function _iotUpdateDisplay() {
+  // Node 1 Update
   const power = parseFloat((_iotState.voltage * _iotState.current).toFixed(1));
   const vEl = document.getElementById('simVoltageVal');
   const aEl = document.getElementById('simCurrentVal');
@@ -163,7 +229,6 @@ function _iotUpdateDisplay() {
   if (aEl) aEl.textContent = _iotState.current.toFixed(2) + ' A';
   if (wEl) wEl.textContent = power + ' W';
 
-  // Color coding: overload = red blink
   if (_iotState.overload) {
     if (aEl) aEl.classList.replace('text-emerald-400', 'text-red-400');
     if (wEl) wEl.classList.replace('text-cyan-400', 'text-red-400');
@@ -171,8 +236,64 @@ function _iotUpdateDisplay() {
     if (aEl) { aEl.classList.remove('text-red-400'); aEl.classList.add('text-emerald-400'); }
     if (wEl) { wEl.classList.remove('text-red-400'); wEl.classList.add('text-cyan-400'); }
   }
+
+  // Node 2 Update
+  const tempEl = document.getElementById('simTempVal');
+  const humidEl = document.getElementById('simHumidVal');
+  const dustEl = document.getElementById('simDustVal');
+  const dustBadge = document.getElementById('simDustBadge');
+
+  if (tempEl) tempEl.textContent = _iotState.temp.toFixed(1) + ' °C';
+  if (humidEl) humidEl.textContent = _iotState.humid.toFixed(1) + ' %';
+  if (dustEl) dustEl.textContent = _iotState.dust.toFixed(1) + ' µg/m³';
+
+  if (dustBadge) {
+    if (_iotState.dust > 100) {
+      dustBadge.textContent = '⚠️ อันตราย ควัน/ฝุ่นหนาแน่น (Hazardous)';
+      dustBadge.className = 'text-[10px] text-rose-400 font-bold block mt-1 animate-pulse';
+      if (dustEl) dustEl.className = 'text-2xl font-mono font-bold text-rose-400';
+    } else if (_iotState.dust > 50) {
+      dustBadge.textContent = '🟡 ปานกลาง (Moderate)';
+      dustBadge.className = 'text-[10px] text-amber-400 font-semibold block mt-1';
+      if (dustEl) dustEl.className = 'text-2xl font-mono font-bold text-amber-400';
+    } else {
+      dustBadge.textContent = '🟢 อากาศดีบริสุทธิ์ (Good)';
+      dustBadge.className = 'text-[10px] text-emerald-400 font-semibold block mt-1';
+      if (dustEl) dustEl.className = 'text-2xl font-mono font-bold text-emerald-400';
+    }
+  }
+
+  // Node 3 Update
+  const doorStatusEl = document.getElementById('simDoorStatus');
+  const alarmStatusEl = document.getElementById('simAlarmStatus');
+  const countEl = document.getElementById('simAccessCount');
+  const logEl = document.getElementById('simLastLog');
+
+  if (doorStatusEl) {
+    if (_iotState.doorLocked) {
+      doorStatusEl.textContent = 'LOCKED 🔒';
+      doorStatusEl.className = 'text-2xl font-mono font-bold text-rose-400';
+    } else {
+      doorStatusEl.textContent = 'UNLOCKED 🔓';
+      doorStatusEl.className = 'text-2xl font-mono font-bold text-emerald-400 animate-pulse';
+    }
+  }
+
+  if (alarmStatusEl) {
+    if (_iotState.sirenOn) {
+      alarmStatusEl.textContent = 'ALARM SIREN 🚨';
+      alarmStatusEl.className = 'text-2xl font-mono font-bold text-rose-400 animate-bounce';
+    } else {
+      alarmStatusEl.textContent = 'NORMAL 🛡️';
+      alarmStatusEl.className = 'text-2xl font-mono font-bold text-slate-300';
+    }
+  }
+
+  if (countEl) countEl.textContent = _iotState.accessCount + ' ครั้ง';
+  if (logEl) logEl.textContent = _iotState.lastLog;
 }
 
+/* Node 1 Actions */
 function toggleRelay(num) {
   const isOn = num === 1 ? (_iotState.relay1 = !_iotState.relay1) : (_iotState.relay2 = !_iotState.relay2);
   const iconEl = document.getElementById('relayIcon' + num);
@@ -191,8 +312,6 @@ function toggleRelay(num) {
     statusEl.textContent = 'STATUS: OFF';
     statusEl.classList.replace('text-emerald-400', 'text-slate-500');
   }
-
-  // Immediately update load simulation
   _iotTickSensor();
 }
 
@@ -203,12 +322,10 @@ function triggerOverloadSim() {
   const aEl = document.getElementById('simCurrentVal');
   const wEl = document.getElementById('simPowerVal');
 
-  // Show spike
   _iotState.voltage = parseFloat((218 + Math.random()).toFixed(1));
   _iotState.current = parseFloat((15 + Math.random() * 5).toFixed(2));
   _iotUpdateDisplay();
 
-  // Blink animation for 3s then recover
   let blink = 0;
   const blinkInterval = setInterval(() => {
     blink++;
@@ -218,7 +335,6 @@ function triggerOverloadSim() {
     if (wEl) wEl.style.opacity = blink % 2 === 0 ? '1' : '0.3';
   }, 300);
 
-  // Recover after 4s
   _iotState.overloadTimeout = setTimeout(() => {
     clearInterval(blinkInterval);
     _iotState.overload = false;
@@ -230,6 +346,140 @@ function triggerOverloadSim() {
     if (wEl) wEl.style.opacity = '1';
     _iotUpdateDisplay();
   }, 4000);
+}
+
+/* Node 2 Actions */
+function togglePurifier() {
+  _iotState.purifierOn = !_iotState.purifierOn;
+  const iconEl = document.getElementById('purifierIcon');
+  const statusEl = document.getElementById('purifierStatus');
+
+  if (_iotState.purifierOn) {
+    iconEl.classList.replace('bg-slate-800', 'bg-cyan-900');
+    iconEl.classList.replace('border-slate-700', 'border-cyan-500');
+    iconEl.classList.replace('text-slate-500', 'text-cyan-400');
+    statusEl.textContent = 'STATUS: RUNNING 🌀';
+    statusEl.classList.replace('text-slate-500', 'text-cyan-400');
+  } else {
+    iconEl.classList.replace('bg-cyan-900', 'bg-slate-800');
+    iconEl.classList.replace('border-cyan-500', 'border-slate-700');
+    iconEl.classList.replace('text-cyan-400', 'text-slate-500');
+    statusEl.textContent = 'STATUS: OFF';
+    statusEl.classList.replace('text-cyan-400', 'text-slate-500');
+  }
+  _iotTickSensor();
+}
+
+function toggleMist() {
+  _iotState.mistOn = !_iotState.mistOn;
+  const iconEl = document.getElementById('mistIcon');
+  const statusEl = document.getElementById('mistStatus');
+
+  if (_iotState.mistOn) {
+    iconEl.classList.replace('bg-slate-800', 'bg-cyan-900');
+    iconEl.classList.replace('border-slate-700', 'border-cyan-500');
+    iconEl.classList.replace('text-slate-500', 'text-cyan-400');
+    statusEl.textContent = 'STATUS: MISTING 💦';
+    statusEl.classList.replace('text-slate-500', 'text-cyan-400');
+  } else {
+    iconEl.classList.replace('bg-cyan-900', 'bg-slate-800');
+    iconEl.classList.replace('border-cyan-500', 'border-slate-700');
+    iconEl.classList.replace('text-cyan-400', 'text-slate-500');
+    statusEl.textContent = 'STATUS: OFF';
+    statusEl.classList.replace('text-cyan-400', 'text-slate-500');
+  }
+  _iotTickSensor();
+}
+
+function triggerDustSim() {
+  _iotState.smokeActive = true;
+  _iotState.dust = 168.5;
+  _iotUpdateDisplay();
+
+  setTimeout(() => {
+    _iotState.smokeActive = false;
+  }, 6000);
+}
+
+/* Node 3 Actions */
+function toggleDoorLock() {
+  _iotState.doorLocked = !_iotState.doorLocked;
+  const iconEl = document.getElementById('doorLockIcon');
+  const labelEl = document.getElementById('doorLockLabel');
+
+  if (!_iotState.doorLocked) {
+    iconEl.classList.replace('bg-slate-800', 'bg-emerald-900');
+    iconEl.classList.replace('border-slate-700', 'border-emerald-500');
+    iconEl.classList.replace('text-rose-400', 'text-emerald-400');
+    labelEl.textContent = 'STATUS: UNLOCKED 🔓';
+    labelEl.className = 'text-[11px] text-emerald-400 font-mono';
+    _iotState.accessCount++;
+    _iotState.lastLog = `LOG: MANUAL RELEASE [${new Date().toLocaleTimeString('th-TH')}]`;
+  } else {
+    iconEl.classList.replace('bg-emerald-900', 'bg-slate-800');
+    iconEl.classList.replace('border-emerald-500', 'border-slate-700');
+    iconEl.classList.replace('text-emerald-400', 'text-rose-400');
+    labelEl.textContent = 'STATUS: LOCKED 🔒';
+    labelEl.className = 'text-[11px] text-rose-400 font-mono';
+  }
+  _iotUpdateDisplay();
+}
+
+function toggleSecuritySiren() {
+  _iotState.sirenOn = !_iotState.sirenOn;
+  const iconEl = document.getElementById('sirenIcon');
+  const labelEl = document.getElementById('sirenLabel');
+
+  if (_iotState.sirenOn) {
+    iconEl.classList.replace('bg-slate-800', 'bg-rose-900');
+    iconEl.classList.replace('border-slate-700', 'border-rose-500');
+    iconEl.classList.replace('text-slate-500', 'text-rose-400');
+    labelEl.textContent = 'STATUS: SIREN ACTIVE 🚨';
+    labelEl.className = 'text-[11px] text-rose-400 font-mono animate-pulse';
+  } else {
+    iconEl.classList.replace('bg-rose-900', 'bg-slate-800');
+    iconEl.classList.replace('border-rose-500', 'border-slate-700');
+    iconEl.classList.replace('text-rose-400', 'text-slate-500');
+    labelEl.textContent = 'STATUS: OFF';
+    labelEl.className = 'text-[11px] text-slate-500 font-mono';
+  }
+  _iotUpdateDisplay();
+}
+
+function triggerRFIDScan() {
+  _iotState.doorLocked = false;
+  _iotState.accessCount++;
+  const cardId = `#${Math.floor(1000 + Math.random() * 9000)}`;
+  const now = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  _iotState.lastLog = `LOG: CARD ${cardId} (PASS ${now})`;
+
+  const iconEl = document.getElementById('doorLockIcon');
+  const labelEl = document.getElementById('doorLockLabel');
+  if (iconEl) {
+    iconEl.classList.replace('bg-slate-800', 'bg-emerald-900');
+    iconEl.classList.replace('border-slate-700', 'border-emerald-500');
+    iconEl.classList.replace('text-rose-400', 'text-emerald-400');
+  }
+  if (labelEl) {
+    labelEl.textContent = 'STATUS: UNLOCKED 🔓';
+    labelEl.className = 'text-[11px] text-emerald-400 font-mono';
+  }
+
+  _iotUpdateDisplay();
+
+  setTimeout(() => {
+    _iotState.doorLocked = true;
+    if (iconEl) {
+      iconEl.classList.replace('bg-emerald-900', 'bg-slate-800');
+      iconEl.classList.replace('border-emerald-500', 'border-slate-700');
+      iconEl.classList.replace('text-emerald-400', 'text-rose-400');
+    }
+    if (labelEl) {
+      labelEl.textContent = 'STATUS: LOCKED 🔒';
+      labelEl.className = 'text-[11px] text-rose-400 font-mono';
+    }
+    _iotUpdateDisplay();
+  }, 3500);
 }
 
 /* ==========================================
@@ -585,15 +835,29 @@ function renderCertificates(filter = 'all') {
         </p>
         <p class="text-xs text-slate-300 leading-relaxed mb-4">${cert.description}</p>
       </div>
-      <div class="pt-4 border-t border-slate-800 flex justify-between items-center">
+      <div class="pt-4 border-t border-slate-800 flex justify-between items-center gap-2">
         <span class="text-[11px] text-slate-400 font-medium px-2 py-0.5 rounded bg-slate-800/60">${cert.category}</span>
-        <a href="${encodeURI(cert.file)}" target="_blank" rel="noopener noreferrer" class="btn-secondary-gray text-xs py-1.5 px-3 inline-flex items-center gap-1.5 hover:bg-slate-700">
-          <span>ดูไฟล์ PDF</span>
-          <i class="fas fa-file-pdf text-red-400"></i>
-        </a>
+        <div class="flex items-center gap-2">
+          <button onclick="openCertLightbox('${cert.id}')" class="btn-secondary-gray text-xs py-1.5 px-3 inline-flex items-center gap-1.5 hover:bg-slate-700">
+            <i class="fas fa-eye text-amber-400"></i> ดูเกียรติบัตร
+          </button>
+          <a href="${encodeURI(cert.file)}" target="_blank" rel="noopener noreferrer" class="text-slate-500 hover:text-slate-300 transition-colors" title="เปิด PDF">
+            <i class="fas fa-file-pdf text-red-400"></i>
+          </a>
+        </div>
       </div>
     </div>
   `).join('');
+}
+
+/* Cert filter delegation (called once at init) */
+function initCertFilterDelegation() {
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('cert-filter-btn')) {
+      const filter = e.target.getAttribute('data-cert-filter');
+      renderCertificates(filter);
+    }
+  });
 }
 
 /* ==========================================
@@ -1289,3 +1553,430 @@ function handleGlobalSearch(query) {
     </div>
   `).join('');
 }
+
+
+/* ==========================================
+   Circuit Code & Pinout Viewer Modal
+   ========================================== */
+const _iotNodeData = {
+  1: {
+    title: 'ESP32 Energy Monitor – Node #01',
+    subtitle: 'Node #01 · ESP32 + PZEM-004T',
+    code: `/**
+ * Node #01: ESP32 Smart Energy Monitor
+ * เชื่อมต่อ: PZEM-004T (UART), Relay Module x2
+ * โปรโตคอล: MQTT (Broker: rmutsv-iot.net:1883)
+ * ผู้พัฒนา: ชามิล กาหลง, RUTS Computer Tech
+ */
+
+#include <WiFi.h>
+#include <PubSubClient.h>
+#include <PZEM004Tv30.h>
+
+const char* SSID     = "RUTS_IOT_LAB";
+const char* BROKER   = "rmutsv-iot.net";
+const int   PORT     = 1883;
+
+PZEM004Tv30 pzem(Serial2, 16, 17); // RX2=16, TX2=17
+const int RELAY1 = 26, RELAY2 = 27;
+
+WiFiClient   wifiClient;
+PubSubClient mqtt(wifiClient);
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(RELAY1, OUTPUT); digitalWrite(RELAY1, LOW);
+  pinMode(RELAY2, OUTPUT); digitalWrite(RELAY2, LOW);
+  WiFi.begin(SSID, "iot@rmutsv");
+  while (WiFi.status() != WL_CONNECTED) delay(500);
+  mqtt.setServer(BROKER, PORT);
+  mqtt.setCallback(onMessage);
+}
+
+void loop() {
+  if (!mqtt.connected()) reconnect();
+  mqtt.loop();
+  static unsigned long t = 0;
+  if (millis() - t > 2000) {
+    t = millis();
+    float v = pzem.voltage(), a = pzem.current(), w = pzem.power();
+    String json = "{\\"v\\":" + String(v,1) + ",\\"a\\":" + String(a,2) + ",\\"w\\":" + String(w,1) + "}";
+    mqtt.publish("iot/node01/sensor", json.c_str());
+    if (a > 10.0) { // Overload protection
+      digitalWrite(RELAY1, LOW); digitalWrite(RELAY2, LOW);
+      mqtt.publish("iot/node01/alert", "OVERLOAD");
+    }
+  }
+}
+
+void onMessage(char* topic, byte* payload, unsigned int len) {
+  String msg((char*)payload, len);
+  if (String(topic) == "iot/node01/relay1") digitalWrite(RELAY1, msg=="ON" ? HIGH : LOW);
+  if (String(topic) == "iot/node01/relay2") digitalWrite(RELAY2, msg=="ON" ? HIGH : LOW);
+}
+
+void reconnect() {
+  while (!mqtt.connected()) {
+    if (mqtt.connect("ESP32_Node01")) {
+      mqtt.subscribe("iot/node01/relay1");
+      mqtt.subscribe("iot/node01/relay2");
+    } else delay(3000);
+  }
+}`,
+    pinout: [
+      { component: 'PZEM-004T (Power Meter)', color: 'text-amber-400', pins: [
+        { mcu: 'GPIO 16 (RX2)', module: 'TX', desc: 'รับข้อมูล UART จาก PZEM' },
+        { mcu: 'GPIO 17 (TX2)', module: 'RX', desc: 'ส่งข้อมูล UART ไป PZEM' },
+        { mcu: '5V', module: 'VCC', desc: 'จ่ายไฟ 5V ให้โมดูล' },
+        { mcu: 'GND', module: 'GND', desc: 'กราวด์ร่วม' }
+      ]},
+      { component: 'Relay Module x2', color: 'text-emerald-400', pins: [
+        { mcu: 'GPIO 26', module: 'IN1', desc: 'ควบคุม Relay #1 (ไฟระเบียง)' },
+        { mcu: 'GPIO 27', module: 'IN2', desc: 'ควบคุม Relay #2 (พัดลม)' },
+        { mcu: '3.3V', module: 'VCC', desc: 'ไฟเลี้ยง Logic Level' },
+        { mcu: 'GND', module: 'GND', desc: 'กราวด์ร่วม' }
+      ]}
+    ]
+  },
+  2: {
+    title: 'ESP8266 Weather & PM2.5 – Node #02',
+    subtitle: 'Node #02 · ESP8266 + DHT22 + GP2Y1010AU0F',
+    code: `/**
+ * Node #02: ESP8266 Weather & Air Quality Station
+ * เชื่อมต่อ: DHT22, GP2Y1010AU0F (ฝุ่น PM2.5)
+ * โปรโตคอล: MQTT over WiFi
+ * ผู้พัฒนา: ชามิล กาหลง, RUTS Computer Tech
+ */
+
+#include <ESP8266WiFi.h>
+#include <PubSubClient.h>
+#include <DHT.h>
+
+#define DHT_PIN   D4
+#define DUST_LED  D5
+#define DUST_OUT  A0
+#define FAN_PIN   D6
+#define MIST_PIN  D7
+
+DHT dht(DHT_PIN, DHT22);
+WiFiClient wc;
+PubSubClient mqtt(wc);
+
+void setup() {
+  dht.begin();
+  pinMode(DUST_LED, OUTPUT);
+  pinMode(FAN_PIN, OUTPUT); pinMode(MIST_PIN, OUTPUT);
+  WiFi.begin("RUTS_IOT_LAB", "iot@rmutsv");
+  while (WiFi.status() != WL_CONNECTED) delay(500);
+  mqtt.setServer("rmutsv-iot.net", 1883);
+  mqtt.setCallback(onMsg);
+}
+
+void loop() {
+  if (!mqtt.connected()) reconnect();
+  mqtt.loop();
+  static unsigned long t = 0;
+  if (millis() - t > 2500) {
+    t = millis();
+    float temp = dht.readTemperature(), hum = dht.readHumidity();
+    // อ่านค่าฝุ่น GP2Y
+    digitalWrite(DUST_LED, LOW); delayMicroseconds(280);
+    float v = analogRead(DUST_OUT) * (3.3/1024.0);
+    delayMicroseconds(40); digitalWrite(DUST_LED, HIGH);
+    float dust = max(0.0f, (v - 0.6f) / 0.005f * 1000.0f);
+    String json = "{\\"t\\":" + String(temp,1) + ",\\"h\\":" + String(hum,1) + ",\\"pm\\":" + String(dust,1) + "}";
+    mqtt.publish("iot/node02/sensor", json.c_str());
+    if (dust > 100.0) digitalWrite(FAN_PIN, HIGH); // Auto purifier
+  }
+}
+
+void onMsg(char* topic, byte* p, unsigned int l) {
+  String m((char*)p, l);
+  if (String(topic) == "iot/node02/fan")  digitalWrite(FAN_PIN, m=="ON" ? HIGH : LOW);
+  if (String(topic) == "iot/node02/mist") digitalWrite(MIST_PIN,m=="ON" ? HIGH : LOW);
+}
+
+void reconnect() {
+  while (!mqtt.connected()) {
+    if (mqtt.connect("ESP8266_Node02")) {
+      mqtt.subscribe("iot/node02/fan");
+      mqtt.subscribe("iot/node02/mist");
+    } else delay(3000);
+  }
+}`,
+    pinout: [
+      { component: 'DHT22 (Temp & Humidity)', color: 'text-cyan-400', pins: [
+        { mcu: 'D4 (GPIO2)', module: 'DATA', desc: 'รับข้อมูลดิจิทัลจาก DHT22' },
+        { mcu: '3.3V', module: 'VCC', desc: 'ไฟเลี้ยง 3.3V' },
+        { mcu: 'GND', module: 'GND', desc: 'กราวด์ร่วม' }
+      ]},
+      { component: 'GP2Y1010AU0F (Dust PM2.5)', color: 'text-amber-400', pins: [
+        { mcu: 'D5 (GPIO14)', module: 'LED (Pin 3)', desc: 'ควบคุมไฟ IR LED ของโมดูล' },
+        { mcu: 'A0 (ADC)', module: 'VO (Pin 4)', desc: 'รับแรงดันเอาต์พุตอนาล็อก' },
+        { mcu: '5V', module: 'VCC (Pin 1)', desc: 'ไฟเลี้ยง 5V' },
+        { mcu: 'GND', module: 'GND (Pin 2)', desc: 'กราวด์ร่วม' }
+      ]},
+      { component: 'Actuators (Fan + Mist)', color: 'text-emerald-400', pins: [
+        { mcu: 'D6 (GPIO12)', module: 'Relay IN → Fan', desc: 'Relay ควบคุมพัดลมฟอกอากาศ' },
+        { mcu: 'D7 (GPIO13)', module: 'Relay IN → Mist', desc: 'Relay ควบคุมหัวพ่นละอองน้ำ' }
+      ]}
+    ]
+  },
+  3: {
+    title: 'Smart Access & Security – Node #03',
+    subtitle: 'Node #03 · Arduino UNO + RFID RC522 + Solenoid',
+    code: `/**
+ * Node #03: Smart RFID Access Control & Security Alarm
+ * เชื่อมต่อ: RFID RC522 (SPI), Solenoid Lock, Buzzer, LED
+ * ผู้พัฒนา: ชามิล กาหลง, RUTS Computer Tech
+ */
+
+#include <SPI.h>
+#include <MFRC522.h>
+
+#define SS_PIN   10
+#define RST_PIN  9
+#define SOLENOID 7
+#define BUZZER   6
+#define LED_G    5
+#define LED_R    4
+
+MFRC522 rfid(SS_PIN, RST_PIN);
+
+const byte AUTH[][4] = {
+  {0xA8, 0xF3, 0x1C, 0x44},  // นักศึกษา #001
+  {0x3B, 0x72, 0xA9, 0x21},  // อาจารย์
+  {0xCC, 0x5D, 0x08, 0xF7}   // Master Card
+};
+
+bool locked = true;
+unsigned long unlockAt = 0;
+
+void setup() {
+  Serial.begin(9600);
+  SPI.begin(); rfid.PCD_Init();
+  for (int p : {SOLENOID, BUZZER, LED_G, LED_R}) pinMode(p, OUTPUT);
+  lockDoor();
+}
+
+void loop() {
+  if (!locked && millis() - unlockAt > 5000) lockDoor(); // Auto-lock 5s
+  if (!rfid.PICC_IsNewCardPresent() || !rfid.PICC_ReadCardSerial()) return;
+  checkUID(rfid.uid.uidByte) ? unlockDoor() : alarm();
+  rfid.PICC_HaltA(); rfid.PCD_StopCrypto1();
+}
+
+bool checkUID(byte* uid) {
+  for (auto& a : AUTH) {
+    if (memcmp(uid, a, 4) == 0) return true;
+  }
+  return false;
+}
+
+void unlockDoor() {
+  locked = false; unlockAt = millis();
+  digitalWrite(SOLENOID, HIGH);
+  digitalWrite(LED_G, HIGH); digitalWrite(LED_R, LOW);
+  tone(BUZZER, 1000, 200);
+  Serial.println("ACCESS GRANTED");
+}
+
+void lockDoor() {
+  locked = true;
+  digitalWrite(SOLENOID, LOW);
+  digitalWrite(LED_G, LOW); digitalWrite(LED_R, HIGH);
+}
+
+void alarm() {
+  for (int i = 0; i < 3; i++) { tone(BUZZER, 2000, 150); delay(200); }
+  Serial.println("ACCESS DENIED");
+}`,
+    pinout: [
+      { component: 'RFID RC522 (SPI Interface)', color: 'text-emerald-400', pins: [
+        { mcu: 'Pin 10 (SS/CS)', module: 'SDA', desc: 'Slave Select สำหรับ SPI' },
+        { mcu: 'Pin 13 (SCK)', module: 'SCK', desc: 'SPI Clock' },
+        { mcu: 'Pin 11 (MOSI)', module: 'MOSI', desc: 'SPI Data → RC522' },
+        { mcu: 'Pin 12 (MISO)', module: 'MISO', desc: 'SPI Data ← RC522' },
+        { mcu: 'Pin 9', module: 'RST', desc: 'Reset โมดูล RFID' },
+        { mcu: '3.3V', module: 'VCC', desc: 'ไฟเลี้ยง 3.3V (ห้ามใช้ 5V!)' },
+        { mcu: 'GND', module: 'GND', desc: 'กราวด์ร่วม' }
+      ]},
+      { component: 'Solenoid Lock & Indicators', color: 'text-rose-400', pins: [
+        { mcu: 'Pin 7', module: 'Relay IN → Solenoid 12V', desc: 'ควบคุมกลอนประตูไฟฟ้า' },
+        { mcu: 'Pin 6', module: 'Buzzer (+)', desc: 'ไซเรน / บัซเซอร์แจ้งเตือน' },
+        { mcu: 'Pin 5', module: 'LED Green (+)', desc: 'ไฟสถานะ: ปลดล็อกแล้ว' },
+        { mcu: 'Pin 4', module: 'LED Red (+)', desc: 'ไฟสถานะ: ล็อก / ปฏิเสธ' }
+      ]}
+    ]
+  }
+};
+
+window.openCircuitCodeModal = function(nodeId) {
+  const data = _iotNodeData[nodeId];
+  if (!data) return;
+
+  document.getElementById('ccModalTitle').textContent = data.title;
+  document.getElementById('ccModalSubtitle').textContent = data.subtitle;
+  document.getElementById('ccCodeContent').textContent = data.code;
+
+  const pinoutEl = document.getElementById('ccPinoutContent');
+  pinoutEl.innerHTML = data.pinout.map(group => `
+    <div class="glass-panel p-4 rounded-2xl border border-slate-800">
+      <h5 class="text-xs font-bold ${group.color} mb-3 flex items-center gap-2">
+        <i class="fas fa-plug"></i> ${group.component}
+      </h5>
+      <div class="overflow-x-auto">
+        <table class="w-full text-[11px] font-mono">
+          <thead>
+            <tr class="border-b border-slate-800">
+              <th class="text-left text-slate-400 font-semibold pb-2 pr-4 min-w-[120px]">MCU Pin</th>
+              <th class="text-left text-slate-400 font-semibold pb-2 pr-4 min-w-[120px]">Module Pin</th>
+              <th class="text-left text-slate-400 font-semibold pb-2">คำอธิบาย</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${group.pins.map(p => `
+              <tr class="border-b border-slate-900/60">
+                <td class="py-1.5 pr-4 text-cyan-300 font-bold">${p.mcu}</td>
+                <td class="py-1.5 pr-4 text-amber-300">${p.module}</td>
+                <td class="py-1.5 text-slate-400">${p.desc}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `).join('');
+
+  switchCCTab('code');
+  const modal = document.getElementById('circuitCodeModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+};
+
+window.closeCircuitCodeModal = function() {
+  const modal = document.getElementById('circuitCodeModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+};
+
+window.switchCCTab = function(tab) {
+  const codeDiv   = document.getElementById('ccTabCode');
+  const pinoutDiv = document.getElementById('ccTabPinout');
+  const codeBtn   = document.getElementById('tabCodeBtn');
+  const pinoutBtn = document.getElementById('tabPinoutBtn');
+  if (tab === 'code') {
+    codeDiv.classList.remove('hidden');
+    pinoutDiv.classList.add('hidden');
+    codeBtn.classList.add('active');
+    pinoutBtn.classList.remove('active');
+  } else {
+    codeDiv.classList.add('hidden');
+    pinoutDiv.classList.remove('hidden');
+    pinoutBtn.classList.add('active');
+    codeBtn.classList.remove('active');
+  }
+};
+
+/* ==========================================
+   Certificate Lightbox Modal
+   ========================================== */
+window.openCertLightbox = function(certId) {
+  const cert = portfolioData.certificates.find(c => c.id === certId);
+  if (!cert) return;
+
+  const modal       = document.getElementById('certLightboxModal');
+  const iframe      = document.getElementById('certIframe');
+  const overlay     = document.getElementById('certIframeOverlay');
+  const titleEl     = document.getElementById('certModalTitle');
+  const orgEl       = document.getElementById('certModalOrg');
+  const dateEl      = document.getElementById('certModalDate');
+  const downloadBtn = document.getElementById('certDownloadBtn');
+  const directLink  = document.getElementById('certDirectLink');
+
+  titleEl.textContent = cert.title;
+  orgEl.textContent   = cert.organization;
+  dateEl.innerHTML    = `<i class="far fa-calendar-alt mr-1"></i>${cert.date}`;
+
+  const fileUrl = encodeURI(cert.file);
+  downloadBtn.href = fileUrl;
+  directLink.href  = fileUrl;
+
+  overlay.classList.add('hidden');
+  iframe.src = fileUrl;
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+};
+
+window.closeCertLightbox = function() {
+  const modal  = document.getElementById('certLightboxModal');
+  const iframe = document.getElementById('certIframe');
+  iframe.src = '';
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+};
+
+/* ==========================================
+   PWA – Service Worker & Install Prompt
+   ========================================== */
+let _pwaInstallEvent = null;
+
+function initPWA() {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('[PWA] SW registered:', reg.scope))
+        .catch(err => console.warn('[PWA] SW failed:', err));
+    });
+  }
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    _pwaInstallEvent = e;
+    setTimeout(() => {
+      const banner = document.getElementById('pwaInstallBanner');
+      if (banner) banner.classList.remove('hidden');
+    }, 4000);
+  });
+
+  window.addEventListener('appinstalled', () => {
+    dismissPWABanner();
+    _pwaInstallEvent = null;
+  });
+}
+
+window.handlePWAInstall = function() {
+  if (!_pwaInstallEvent) return;
+  _pwaInstallEvent.prompt();
+  _pwaInstallEvent.userChoice.then(() => {
+    _pwaInstallEvent = null;
+    dismissPWABanner();
+  });
+};
+
+window.dismissPWABanner = function() {
+  const banner = document.getElementById('pwaInstallBanner');
+  if (banner) banner.classList.add('hidden');
+};
+
+// Keyboard & backdrop close
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeCircuitCodeModal();
+    closeCertLightbox();
+  }
+});
+
+['circuitCodeModal', 'certLightboxModal'].forEach(id => {
+  document.addEventListener('click', (e) => {
+    const el = document.getElementById(id);
+    if (el && e.target === el) {
+      el.classList.add('hidden');
+      el.classList.remove('flex');
+      if (id === 'certLightboxModal') {
+        document.getElementById('certIframe').src = '';
+      }
+    }
+  });
+});

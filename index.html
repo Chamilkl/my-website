@@ -38,7 +38,14 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="assets/css/style.css?v=1.0.2" />
+  <link rel="stylesheet" href="assets/css/style.css?v=1.0.3" />
+
+  <!-- PWA Manifest & Meta Tags -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0b0f19" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="assets/images/profile-avatar.svg" />
 </head>
 <body class="bg-graytheme-950 text-graytheme-50 antialiased selection:bg-slate-700 selection:text-white">
 
@@ -330,16 +337,31 @@
   </section>
 
   <!-- ==================== 6.5 INTERACTIVE TECH LAB & IOT SIMULATOR ==================== -->
+  <!-- ==================== 6. TECH LAB & IOT SIMULATOR ==================== -->
   <section id="tech-lab" class="py-24 border-t border-slate-800/60 bg-slate-900/60 relative">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center max-w-3xl mx-auto mb-12">
         <h2 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2"><i class="fas fa-flask mr-1"></i> INTERACTIVE LAB</h2>
         <h3 class="text-3xl font-extrabold text-gradient-gray">ห้องทดลองระบบ IoT & ไมโครคอนโทรลเลอร์จำลอง</h3>
-        <p class="text-sm text-slate-400 mt-2">ทดลองกดสั่งการสวิตช์รีเลย์และเฝ้าระวังค่าแรงดันกระแสไฟฟ้าจำลอง (ESP32 Smart Sensor Simulator)</p>
+        <p class="text-sm text-slate-400 mt-2">ทดลองกดสั่งการสวิตช์รีเลย์ อุปกรณ์ควบคุม และเฝ้าระวังค่าเซนเซอร์เรียลไทม์ (3 Multi-Node Microcontroller Simulators)</p>
         <div class="w-16 h-1 bg-slate-600 mx-auto mt-4 rounded-full"></div>
       </div>
 
-      <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-700 max-w-4xl mx-auto">
+      <!-- Node Selector Tabs -->
+      <div class="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8">
+        <button onclick="switchIoTNode(1)" id="labNodeBtn-1" class="iot-node-tab-btn active px-4 py-2.5 rounded-xl text-xs font-semibold glass-panel flex items-center gap-2 transition-all">
+          <i class="fas fa-bolt text-amber-400"></i> Node #01: ESP32 Energy Monitor
+        </button>
+        <button onclick="switchIoTNode(2)" id="labNodeBtn-2" class="iot-node-tab-btn px-4 py-2.5 rounded-xl text-xs font-semibold glass-panel flex items-center gap-2 transition-all text-slate-400">
+          <i class="fas fa-cloud-sun text-cyan-400"></i> Node #02: ESP8266 Weather & PM2.5
+        </button>
+        <button onclick="switchIoTNode(3)" id="labNodeBtn-3" class="iot-node-tab-btn px-4 py-2.5 rounded-xl text-xs font-semibold glass-panel flex items-center gap-2 transition-all text-slate-400">
+          <i class="fas fa-lock text-emerald-400"></i> Node #03: Smart Access & Alarm Security
+        </button>
+      </div>
+
+      <!-- NODE 1: ESP32 Energy Monitor -->
+      <div id="iotNodeTab-1" class="iot-node-content glass-panel p-6 sm:p-8 rounded-3xl border border-slate-700 max-w-4xl mx-auto">
         <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 border-b border-slate-800">
           <div class="flex items-center space-x-3">
             <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-400">
@@ -350,9 +372,14 @@
               <span class="text-xs text-emerald-400 font-mono flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> MQTT Connected (Broker: rmutsv-iot.net)</span>
             </div>
           </div>
-          <button onclick="triggerOverloadSim()" class="btn-secondary-gray text-xs py-2 px-4 flex items-center gap-1.5">
-            <i class="fas fa-bolt text-amber-400"></i> จำลองค่ากระแสเกิน (Overload Test)
-          </button>
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="openCircuitCodeModal(1)" class="btn-secondary-gray text-xs py-2 px-3 flex items-center gap-1.5">
+              <i class="fas fa-code text-cyan-400"></i> ดูโค้ด C++ & วงจร
+            </button>
+            <button onclick="triggerOverloadSim()" class="btn-secondary-gray text-xs py-2 px-4 flex items-center gap-1.5">
+              <i class="fas fa-bolt text-amber-400"></i> จำลองค่ากระแสเกิน (Overload Test)
+            </button>
+          </div>
         </div>
 
         <!-- Gauges & Telemetry -->
@@ -388,7 +415,7 @@
                 <span id="relayStatus1" class="text-[11px] text-slate-500 font-mono">STATUS: OFF</span>
               </div>
             </div>
-            <button onclick="toggleRelay(1)" class="btn-secondary-gray text-xs py-1.5 px-3">สลับสวิตช์</button>
+            <button onclick="toggleRelay(1)" class="btn-secondary-gray text-xs py-1.5 px-3">เปิด / ปิด</button>
           </div>
 
           <div class="glass-panel p-4 rounded-2xl flex items-center justify-between">
@@ -401,7 +428,153 @@
                 <span id="relayStatus2" class="text-[11px] text-slate-500 font-mono">STATUS: OFF</span>
               </div>
             </div>
-            <button onclick="toggleRelay(2)" class="btn-secondary-gray text-xs py-1.5 px-3">สลับสวิตช์</button>
+            <button onclick="toggleRelay(2)" class="btn-secondary-gray text-xs py-1.5 px-3">เปิด / ปิด</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- NODE 2: ESP8266 Weather & PM2.5 Station -->
+      <div id="iotNodeTab-2" class="iot-node-content hidden glass-panel p-6 sm:p-8 rounded-3xl border border-slate-700 max-w-4xl mx-auto">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 border-b border-slate-800">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-cyan-400">
+              <i class="fas fa-cloud-sun text-lg"></i>
+            </div>
+            <div>
+              <h4 class="text-base font-bold text-slate-100">ESP8266 Weather & Environmental Station Node #02</h4>
+              <span class="text-xs text-cyan-400 font-mono flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> Wi-Fi Live Stream (DHT22 + Dust Sensor)</span>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="openCircuitCodeModal(2)" class="btn-secondary-gray text-xs py-2 px-3 flex items-center gap-1.5">
+              <i class="fas fa-code text-cyan-400"></i> ดูโค้ด C++ & วงจร
+            </button>
+            <button onclick="triggerDustSim()" class="btn-secondary-gray text-xs py-2 px-4 flex items-center gap-1.5">
+              <i class="fas fa-smog text-amber-400"></i> จำลองควัน/ฝุ่นพุ่งสูง (Smoke Test)
+            </button>
+          </div>
+        </div>
+
+        <!-- Gauges & Telemetry -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 py-6">
+          <div class="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 text-center">
+            <span class="text-xs text-slate-400 font-semibold block mb-1">อุณหภูมิ (Temperature)</span>
+            <span id="simTempVal" class="text-2xl font-mono font-bold text-amber-400">28.4 °C</span>
+            <span class="text-[10px] text-slate-500 block mt-1">DHT22 Digital Sensor</span>
+          </div>
+
+          <div class="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 text-center">
+            <span class="text-xs text-slate-400 font-semibold block mb-1">ความชื้นสัมพัทธ์ (Humidity)</span>
+            <span id="simHumidVal" class="text-2xl font-mono font-bold text-cyan-400">64.2 %</span>
+            <span class="text-[10px] text-slate-500 block mt-1">RH Level</span>
+          </div>
+
+          <div class="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 text-center">
+            <span class="text-xs text-slate-400 font-semibold block mb-1">ฝุ่นละออง PM2.5 (Air Quality)</span>
+            <span id="simDustVal" class="text-2xl font-mono font-bold text-emerald-400">38 µg/m³</span>
+            <span id="simDustBadge" class="text-[10px] text-emerald-400 font-semibold block mt-1">อากาศดีบริสุทธิ์ (Good)</span>
+          </div>
+        </div>
+
+        <!-- Actuator Control Toggles -->
+        <div class="pt-4 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="glass-panel p-4 rounded-2xl flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <div id="purifierIcon" class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500">
+                <i class="fas fa-wind text-lg"></i>
+              </div>
+              <div>
+                <h5 class="text-xs font-bold text-slate-200">Actuator #1: พัดลมเครื่องฟอกอากาศ</h5>
+                <span id="purifierStatus" class="text-[11px] text-slate-500 font-mono">STATUS: OFF</span>
+              </div>
+            </div>
+            <button onclick="togglePurifier()" class="btn-secondary-gray text-xs py-1.5 px-3">เปิด / ปิด</button>
+          </div>
+
+          <div class="glass-panel p-4 rounded-2xl flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <div id="mistIcon" class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500">
+                <i class="fas fa-spray-can text-lg"></i>
+              </div>
+              <div>
+                <h5 class="text-xs font-bold text-slate-200">Actuator #2: สเปรย์ละอองน้ำเพิ่มความชื้น</h5>
+                <span id="mistStatus" class="text-[11px] text-slate-500 font-mono">STATUS: OFF</span>
+              </div>
+            </div>
+            <button onclick="toggleMist()" class="btn-secondary-gray text-xs py-1.5 px-3">เปิด / ปิด</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- NODE 3: Smart Access & Alarm Security -->
+      <div id="iotNodeTab-3" class="iot-node-content hidden glass-panel p-6 sm:p-8 rounded-3xl border border-slate-700 max-w-4xl mx-auto">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 border-b border-slate-800">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-400">
+              <i class="fas fa-shield-alt text-lg"></i>
+            </div>
+            <div>
+              <h4 class="text-base font-bold text-slate-100">Smart Access & Security System Node #03</h4>
+              <span class="text-xs text-emerald-400 font-mono flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> SPI/I2C Access Controller (RFID RC522)</span>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="openCircuitCodeModal(3)" class="btn-secondary-gray text-xs py-2 px-3 flex items-center gap-1.5">
+              <i class="fas fa-code text-cyan-400"></i> ดูโค้ด C++ & วงจร
+            </button>
+            <button onclick="triggerRFIDScan()" class="btn-secondary-gray text-xs py-2 px-4 flex items-center gap-1.5">
+              <i class="fas fa-id-card text-emerald-400"></i> ทาบบัตร RFID จำลอง (Scan Card)
+            </button>
+          </div>
+        </div>
+
+        <!-- Gauges & Telemetry -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 py-6">
+          <div class="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 text-center">
+            <span class="text-xs text-slate-400 font-semibold block mb-1">สถานะประตู (Door Lock)</span>
+            <span id="simDoorStatus" class="text-2xl font-mono font-bold text-rose-400">LOCKED 🔒</span>
+            <span class="text-[10px] text-slate-500 block mt-1">Solenoid Lock Active</span>
+          </div>
+
+          <div class="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 text-center">
+            <span class="text-xs text-slate-400 font-semibold block mb-1">ระบบเตือนภัย (Security Alarm)</span>
+            <span id="simAlarmStatus" class="text-2xl font-mono font-bold text-slate-300">NORMAL 🛡️</span>
+            <span class="text-[10px] text-slate-500 block mt-1">Buzzer & Strobe Light</span>
+          </div>
+
+          <div class="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 text-center">
+            <span class="text-xs text-slate-400 font-semibold block mb-1">นับจำนวนการเข้าห้องวันนี้</span>
+            <span id="simAccessCount" class="text-2xl font-mono font-bold text-cyan-400">14 ครั้ง</span>
+            <span id="simLastLog" class="text-[10px] text-slate-400 block mt-1 font-mono line-clamp-1">LOG: ID #A8-F3 (PASS)</span>
+          </div>
+        </div>
+
+        <!-- Access Control Toggles -->
+        <div class="pt-4 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="glass-panel p-4 rounded-2xl flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <div id="doorLockIcon" class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-rose-400">
+                <i class="fas fa-lock text-lg"></i>
+              </div>
+              <div>
+                <h5 class="text-xs font-bold text-slate-200">Control #1: สวิตช์กลอนประตูไฟฟ้า</h5>
+                <span id="doorLockLabel" class="text-[11px] text-rose-400 font-mono">STATUS: LOCKED 🔒</span>
+              </div>
+            </div>
+            <button onclick="toggleDoorLock()" class="btn-secondary-gray text-xs py-1.5 px-3">ปลดล็อก / ล็อก</button>
+          </div>
+
+          <div class="glass-panel p-4 rounded-2xl flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <div id="sirenIcon" class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500">
+                <i class="fas fa-bell text-lg"></i>
+              </div>
+              <div>
+                <h5 class="text-xs font-bold text-slate-200">Control #2: ระบบไซเรนสัญญาณเตือนภัย</h5>
+                <span id="sirenLabel" class="text-[11px] text-slate-500 font-mono">STATUS: OFF</span>
+              </div>
+            </div>
+            <button onclick="toggleSecuritySiren()" class="btn-secondary-gray text-xs py-1.5 px-3">เปิด / ปิด</button>
           </div>
         </div>
       </div>
@@ -923,12 +1096,128 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL: C++ Source Code & Circuit Pinout Viewer ==================== -->
+  <div id="circuitCodeModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay p-4">
+    <div class="glass-panel w-full max-w-4xl rounded-3xl p-6 sm:p-8 relative border border-slate-700 max-h-[92vh] flex flex-col overflow-hidden">
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800 shrink-0">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-cyan-400">
+            <i class="fas fa-microchip text-base"></i>
+          </div>
+          <div>
+            <h3 id="ccModalTitle" class="text-sm font-bold text-slate-100">Source Code & Circuit Pinout</h3>
+            <span id="ccModalSubtitle" class="text-[11px] text-cyan-400 font-mono">Node #01 · ESP32</span>
+          </div>
+        </div>
+        <button onclick="closeCircuitCodeModal()" class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Tab Switcher -->
+      <div class="flex gap-2 mt-4 mb-4 shrink-0">
+        <button id="tabCodeBtn" onclick="switchCCTab('code')" class="cc-tab-btn active px-4 py-1.5 rounded-lg text-xs font-semibold transition-all">
+          <i class="fas fa-code mr-1 text-cyan-400"></i> ซอร์สโค้ด C++
+        </button>
+        <button id="tabPinoutBtn" onclick="switchCCTab('pinout')" class="cc-tab-btn px-4 py-1.5 rounded-lg text-xs font-semibold transition-all">
+          <i class="fas fa-sitemap mr-1 text-amber-400"></i> วงจรและ Pinout
+        </button>
+      </div>
+
+      <!-- Code Tab -->
+      <div id="ccTabCode" class="flex-1 overflow-y-auto min-h-0">
+        <div class="cpp-code-block rounded-2xl p-5 text-xs font-mono leading-relaxed overflow-x-auto whitespace-pre" id="ccCodeContent">// Loading...</div>
+      </div>
+
+      <!-- Pinout Tab -->
+      <div id="ccTabPinout" class="hidden flex-1 overflow-y-auto min-h-0">
+        <div id="ccPinoutContent" class="space-y-4"></div>
+      </div>
+
+      <!-- Footer -->
+      <div class="pt-4 border-t border-slate-800 flex justify-between items-center shrink-0 mt-4">
+        <span class="text-[11px] text-slate-500 font-mono"><i class="fas fa-info-circle mr-1"></i> โค้ดตัวอย่างสำหรับการจำลองระบบ</span>
+        <button onclick="closeCircuitCodeModal()" class="btn-secondary-gray text-xs py-2 px-5">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: Certificate Lightbox Viewer ==================== -->
+  <div id="certLightboxModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay p-4">
+    <div class="glass-panel w-full max-w-4xl rounded-3xl p-5 sm:p-7 relative border border-slate-700 max-h-[94vh] flex flex-col overflow-hidden">
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800 shrink-0">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-xl bg-slate-800 border border-amber-700/60 flex items-center justify-center text-amber-400">
+            <i class="fas fa-certificate text-base"></i>
+          </div>
+          <div>
+            <h3 id="certModalTitle" class="text-sm font-bold text-slate-100 line-clamp-1">เกียรติบัตร</h3>
+            <span id="certModalOrg" class="text-[11px] text-amber-400 font-mono"></span>
+          </div>
+        </div>
+        <button onclick="closeCertLightbox()" class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- PDF/Preview Frame -->
+      <div class="flex-1 min-h-0 mt-4 rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 relative">
+        <iframe id="certIframe" src="" class="w-full h-full" style="min-height: 60vh;" title="Certificate Preview"></iframe>
+        <div id="certIframeOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 hidden">
+          <i class="fas fa-file-pdf text-5xl text-red-400 mb-4"></i>
+          <p class="text-slate-300 text-sm font-semibold mb-2">ไม่สามารถแสดงไฟล์ PDF ในหน้าต่างนี้ได้</p>
+          <p class="text-slate-400 text-xs mb-4">เบราว์เซอร์บางรุ่นจำกัดการแสดงผล PDF แบบ Inline</p>
+          <a id="certDirectLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-primary-gray text-xs py-2 px-5 flex items-center gap-2">
+            <i class="fas fa-external-link-alt"></i> เปิดไฟล์ PDF โดยตรง
+          </a>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="pt-4 border-t border-slate-800 flex flex-wrap justify-between items-center gap-3 shrink-0 mt-4">
+        <span id="certModalDate" class="text-[11px] text-slate-400 font-mono"><i class="far fa-calendar-alt mr-1"></i></span>
+        <div class="flex gap-2">
+          <a id="certDownloadBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn-primary-gray text-xs py-2 px-4 flex items-center gap-1.5">
+            <i class="fas fa-download"></i> ดาวน์โหลด PDF
+          </a>
+          <button onclick="closeCertLightbox()" class="btn-secondary-gray text-xs py-2 px-4">ปิด</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PWA: Install App Banner ==================== -->
+  <div id="pwaInstallBanner" class="fixed bottom-24 right-5 z-40 hidden max-w-xs">
+    <div class="glass-panel p-4 rounded-2xl border border-slate-600 shadow-2xl">
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0">
+          <i class="fas fa-mobile-alt text-slate-200 text-lg"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-bold text-slate-100 mb-0.5">ติดตั้งแอปพลิเคชัน</p>
+          <p class="text-[11px] text-slate-400 leading-snug">เพิ่มพอร์ตโฟลิโอลงหน้าจอหลักเพื่อเปิดได้เร็วขึ้นแบบออฟไลน์</p>
+          <div class="flex gap-2 mt-3">
+            <button onclick="handlePWAInstall()" class="btn-primary-gray text-[11px] py-1.5 px-3 flex items-center gap-1">
+              <i class="fas fa-download text-[10px]"></i> ติดตั้ง
+            </button>
+            <button onclick="dismissPWABanner()" class="btn-secondary-gray text-[11px] py-1.5 px-3">ไม่ตอนนี้</button>
+          </div>
+        </div>
+        <button onclick="dismissPWABanner()" class="text-slate-500 hover:text-slate-300 transition-colors shrink-0">
+          <i class="fas fa-times text-xs"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- JavaScript Modules -->
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-storage-compat.js"></script>
   <script src="assets/js/firebase-config.js?v=1.0.0"></script>
   <script src="assets/js/data.js?v=1.0.2"></script>
-  <script src="assets/js/main.js?v=1.0.2"></script>
+  <script src="assets/js/main.js?v=1.0.3"></script>
 </body>
 </html>
