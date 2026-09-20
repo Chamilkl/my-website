@@ -1,0 +1,488 @@
+/**
+ * Chamil Kalong - Dev Admin Portal Logic
+ * Handles Authentication, Profile Avatar & Bio Editing,
+ * Content Management (Education, Certificates, Activities, Projects),
+ * LocalStorage Persistence, and Data.js Export.
+ */
+
+const DEV_USER = 'chamil';
+const DEV_PASS = '280225';
+
+document.addEventListener('DOMContentLoaded', () => {
+  initCustomDevData();
+  checkAuth();
+  initAdminEventListeners();
+});
+
+function initCustomDevData() {
+  try {
+    const customProfile = JSON.parse(localStorage.getItem('ck_custom_profile') || 'null');
+    if (customProfile) {
+      portfolioData.personalInfo = { ...portfolioData.personalInfo, ...customProfile };
+    }
+
+    const storedEdu = localStorage.getItem('ck_portfolio_education');
+    if (storedEdu) portfolioData.education = JSON.parse(storedEdu);
+
+    const storedCerts = localStorage.getItem('ck_portfolio_certificates');
+    if (storedCerts) portfolioData.certificates = JSON.parse(storedCerts);
+
+    const storedActs = localStorage.getItem('ck_portfolio_activities');
+    if (storedActs) portfolioData.activities = JSON.parse(storedActs);
+
+    const storedProjs = localStorage.getItem('ck_portfolio_projects');
+    if (storedProjs) portfolioData.projects = JSON.parse(storedProjs);
+
+  } catch (e) {
+    console.error('Error loading custom dev data:', e);
+  }
+}
+
+function syncLocalStorage() {
+  try {
+    localStorage.setItem('ck_portfolio_education', JSON.stringify(portfolioData.education));
+    localStorage.setItem('ck_portfolio_certificates', JSON.stringify(portfolioData.certificates));
+    localStorage.setItem('ck_portfolio_activities', JSON.stringify(portfolioData.activities));
+    localStorage.setItem('ck_portfolio_projects', JSON.stringify(portfolioData.projects));
+    if (portfolioData.personalInfo) {
+      localStorage.setItem('ck_custom_profile', JSON.stringify(portfolioData.personalInfo));
+    }
+  } catch (e) {
+    console.error('Error syncing local storage:', e);
+  }
+}
+
+function checkAuth() {
+  const isAuth = sessionStorage.getItem('dev_auth') === 'true';
+  const loginScreen = document.getElementById('loginScreen');
+  const adminDashboard = document.getElementById('adminDashboard');
+  const authHeaderControls = document.getElementById('authHeaderControls');
+
+  if (isAuth) {
+    if (loginScreen) loginScreen.classList.add('hidden');
+    if (adminDashboard) adminDashboard.classList.remove('hidden');
+    if (authHeaderControls) authHeaderControls.classList.remove('hidden');
+
+    loadProfileForm();
+    renderAllAdminLists();
+    updateCodeViewer();
+  } else {
+    if (loginScreen) loginScreen.classList.remove('hidden');
+    if (adminDashboard) adminDashboard.classList.add('hidden');
+    if (authHeaderControls) authHeaderControls.classList.add('hidden');
+  }
+}
+
+function initAdminEventListeners() {
+  // Login Form
+  const loginForm = document.getElementById('adminLoginForm');
+  if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const u = document.getElementById('adminUser').value.trim();
+      const p = document.getElementById('adminPass').value.trim();
+      const err = document.getElementById('adminLoginErr');
+
+      if (u === DEV_USER && p === DEV_PASS) {
+        sessionStorage.setItem('dev_auth', 'true');
+        if (err) err.classList.add('hidden');
+        checkAuth();
+      } else {
+        if (err) err.classList.remove('hidden');
+      }
+    });
+  }
+
+  // Profile Save Form
+  const profileForm = document.getElementById('profileForm');
+  if (profileForm) {
+    profileForm.addEventListener('submit', handleProfileSave);
+  }
+
+  // Avatar Image Upload File Listener
+  const avatarFileInput = document.getElementById('avatarFileInput');
+  if (avatarFileInput) {
+    avatarFileInput.addEventListener('change', handleAvatarFileUpload);
+  }
+
+  // Avatar URL Input Listener
+  const avatarUrlInput = document.getElementById('avatarUrlInput');
+  if (avatarUrlInput) {
+    avatarUrlInput.addEventListener('input', (e) => {
+      const url = e.target.value.trim();
+      if (url) {
+        const preview = document.getElementById('avatarPreview');
+        if (preview) preview.src = url;
+      }
+    });
+  }
+
+  // Forms Submissions
+  const eduForm = document.getElementById('adminEduForm');
+  if (eduForm) eduForm.addEventListener('submit', handleAddEdu);
+
+  const certForm = document.getElementById('adminCertForm');
+  if (certForm) certForm.addEventListener('submit', handleAddCert);
+
+  const actForm = document.getElementById('adminActForm');
+  if (actForm) actForm.addEventListener('submit', handleAddAct);
+
+  const projForm = document.getElementById('adminProjForm');
+  if (projForm) projForm.addEventListener('submit', handleAddProj);
+}
+
+window.handleDevLogout = function() {
+  sessionStorage.removeItem('dev_auth');
+  checkAuth();
+};
+
+/* ==========================================
+   Tab Switcher Logic
+   ========================================== */
+window.showAdminTab = function(tabName) {
+  const tabs = document.querySelectorAll('.admin-tab-content');
+  const btns = document.querySelectorAll('.admin-side-btn');
+
+  tabs.forEach(t => t.classList.add('hidden'));
+  btns.forEach(b => {
+    b.classList.remove('active', 'bg-slate-800', 'text-slate-100');
+    b.classList.add('text-slate-400');
+  });
+
+  const targetTab = document.getElementById(`adminTab-${tabName}`);
+  const targetBtn = document.getElementById(`sideBtn-${tabName}`);
+
+  if (targetTab) targetTab.classList.remove('hidden');
+  if (targetBtn) {
+    targetBtn.classList.add('active', 'bg-slate-800', 'text-slate-100');
+    targetBtn.classList.remove('text-slate-400');
+  }
+
+  if (tabName === 'backup') {
+    updateCodeViewer();
+  }
+};
+
+/* ==========================================
+   Profile Management
+   ========================================== */
+function loadProfileForm() {
+  const info = portfolioData.personalInfo;
+
+  if (document.getElementById('profNameTh')) document.getElementById('profNameTh').value = info.nameTh || '';
+  if (document.getElementById('profNameEn')) document.getElementById('profNameEn').value = info.nameEn || '';
+  if (document.getElementById('profNickname')) document.getElementById('profNickname').value = info.nickname || '';
+  if (document.getElementById('profRole')) document.getElementById('profRole').value = info.role || '';
+  if (document.getElementById('profUniversity')) document.getElementById('profUniversity').value = info.university || '';
+  if (document.getElementById('profDegree')) document.getElementById('profDegree').value = info.degree || '';
+  if (document.getElementById('profEmail')) document.getElementById('profEmail').value = info.email || '';
+  if (document.getElementById('profPhone')) document.getElementById('profPhone').value = info.phone || '';
+  if (document.getElementById('profLocation')) document.getElementById('profLocation').value = info.location || '';
+  if (document.getElementById('profBio')) document.getElementById('profBio').value = info.bio || '';
+
+  const avatarUrl = info.avatarImage || 'assets/images/profile-avatar.svg';
+  if (document.getElementById('avatarUrlInput')) document.getElementById('avatarUrlInput').value = avatarUrl;
+  if (document.getElementById('avatarPreview')) document.getElementById('avatarPreview').src = avatarUrl;
+}
+
+function handleAvatarFileUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    const dataUrl = event.target.result;
+    const preview = document.getElementById('avatarPreview');
+    const urlInput = document.getElementById('avatarUrlInput');
+    
+    if (preview) preview.src = dataUrl;
+    if (urlInput) urlInput.value = dataUrl;
+  };
+  reader.readAsDataURL(file);
+}
+
+window.resetDefaultAvatar = function() {
+  const defaultPath = 'assets/images/profile-avatar.svg';
+  if (document.getElementById('avatarPreview')) document.getElementById('avatarPreview').src = defaultPath;
+  if (document.getElementById('avatarUrlInput')) document.getElementById('avatarUrlInput').value = defaultPath;
+};
+
+function handleProfileSave(e) {
+  e.preventDefault();
+
+  const updatedProfile = {
+    nameTh: document.getElementById('profNameTh').value.trim(),
+    nameEn: document.getElementById('profNameEn').value.trim(),
+    nickname: document.getElementById('profNickname').value.trim(),
+    role: document.getElementById('profRole').value.trim(),
+    university: document.getElementById('profUniversity').value.trim(),
+    degree: document.getElementById('profDegree').value.trim(),
+    email: document.getElementById('profEmail').value.trim(),
+    phone: document.getElementById('profPhone').value.trim(),
+    location: document.getElementById('profLocation').value.trim(),
+    bio: document.getElementById('profBio').value.trim(),
+    avatarImage: document.getElementById('avatarUrlInput').value.trim() || 'assets/images/profile-avatar.svg'
+  };
+
+  portfolioData.personalInfo = { ...portfolioData.personalInfo, ...updatedProfile };
+  syncLocalStorage();
+
+  showNotice('บันทึกข้อมูลโปรไฟล์รูปภาพและข้อมูลส่วนตัวเรียบร้อยแล้ว!');
+  updateCodeViewer();
+}
+
+/* ==========================================
+   Content Handlers (Add / Delete)
+   ========================================== */
+function handleAddEdu(e) {
+  e.preventDefault();
+  const newItem = {
+    period: document.getElementById('eduPeriod').value.trim(),
+    degree: document.getElementById('eduDegree').value.trim(),
+    major: document.getElementById('eduMajor').value.trim(),
+    institution: document.getElementById('eduInst').value.trim(),
+    description: document.getElementById('eduDesc').value.trim() || '',
+    highlights: ['อัปเดตจากระบบ Dev Portal']
+  };
+
+  portfolioData.education.unshift(newItem);
+  syncLocalStorage();
+  renderAllAdminLists();
+  document.getElementById('adminEduForm').reset();
+  showNotice('เพิ่มประวัติการศึกษาใหม่เรียบร้อยแล้ว!');
+}
+
+function handleAddCert(e) {
+  e.preventDefault();
+  const newItem = {
+    id: `cert-${Date.now()}`,
+    title: document.getElementById('certTitleInput').value.trim(),
+    organization: document.getElementById('certOrgInput').value.trim(),
+    date: document.getElementById('certDateInput').value.trim(),
+    category: document.getElementById('certCatInput').value.trim(),
+    badge: document.getElementById('certBadgeInput').value.trim() || 'เกียรติบัตร',
+    file: document.getElementById('certFileInput').value.trim() || '#',
+    icon: 'fa-certificate',
+    description: document.getElementById('certDescInput').value.trim() || ''
+  };
+
+  portfolioData.certificates.unshift(newItem);
+  syncLocalStorage();
+  renderAllAdminLists();
+  document.getElementById('adminCertForm').reset();
+  showNotice('เพิ่มเกียรติบัตรใหม่เรียบร้อยแล้ว!');
+}
+
+function handleAddAct(e) {
+  e.preventDefault();
+  const newItem = {
+    id: `act-${Date.now()}`,
+    title: document.getElementById('actTitleInput').value.trim(),
+    organization: document.getElementById('actOrgInput').value.trim(),
+    date: document.getElementById('actDateInput').value.trim(),
+    badge: document.getElementById('actBadgeInput').value.trim() || 'กิจกรรม',
+    description: document.getElementById('actDescInput').value.trim() || ''
+  };
+
+  portfolioData.activities.unshift(newItem);
+  syncLocalStorage();
+  renderAllAdminLists();
+  document.getElementById('adminActForm').reset();
+  showNotice('เพิ่มกิจกรรมใหม่เรียบร้อยแล้ว!');
+}
+
+function handleAddProj(e) {
+  e.preventDefault();
+  const tagsStr = document.getElementById('projTagsInput').value.trim();
+  const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()) : ['Project'];
+
+  const newItem = {
+    id: Date.now(),
+    title: document.getElementById('projTitleInput').value.trim(),
+    englishTitle: document.getElementById('projEngTitleInput').value.trim() || 'Project',
+    category: document.getElementById('projCatInput').value,
+    categoryName: document.getElementById('projCatInput').value === 'iot' ? 'IoT & Embedded' : (document.getElementById('projCatInput').value === 'network' ? 'Network & Systems' : 'Software & Web'),
+    image: 'assets/images/project-web.svg',
+    summary: document.getElementById('projSummaryInput').value.trim(),
+    description: document.getElementById('projDescInput').value.trim() || '',
+    tags: tags,
+    date: document.getElementById('projDateInput').value.trim() || '2026',
+    github: '#',
+    demo: '#'
+  };
+
+  portfolioData.projects.unshift(newItem);
+  syncLocalStorage();
+  renderAllAdminLists();
+  document.getElementById('adminProjForm').reset();
+  showNotice('เพิ่มโปรเจกต์ใหม่เรียบร้อยแล้ว!');
+}
+
+/* ==========================================
+   Render Admin Lists
+   ========================================== */
+function renderAllAdminLists() {
+  // Education List
+  const eduContainer = document.getElementById('eduListContainer');
+  if (eduContainer) {
+    eduContainer.innerHTML = portfolioData.education.map((item, idx) => `
+      <div class="glass-panel p-4 rounded-xl flex items-center justify-between text-xs">
+        <div>
+          <span class="font-bold text-slate-100">${item.degree}</span> - <span class="text-slate-300">${item.institution}</span>
+          <span class="text-[11px] text-slate-400 block">${item.major} (${item.period})</span>
+        </div>
+        <button onclick="deleteEduItem(${idx})" class="px-2.5 py-1 rounded-lg bg-rose-950/80 border border-rose-800 text-rose-300 hover:bg-rose-900 transition-colors">
+          <i class="fas fa-trash-alt mr-1"></i> ลบ
+        </button>
+      </div>
+    `).join('');
+  }
+
+  // Certificates List
+  const certContainer = document.getElementById('certListContainer');
+  if (certContainer) {
+    certContainer.innerHTML = portfolioData.certificates.map((item, idx) => `
+      <div class="glass-panel p-4 rounded-xl flex items-center justify-between text-xs">
+        <div>
+          <span class="font-bold text-slate-100">${item.title}</span>
+          <span class="text-[11px] text-slate-400 block">${item.organization} • ${item.date}</span>
+        </div>
+        <button onclick="deleteCertItem(${idx})" class="px-2.5 py-1 rounded-lg bg-rose-950/80 border border-rose-800 text-rose-300 hover:bg-rose-900 transition-colors">
+          <i class="fas fa-trash-alt mr-1"></i> ลบ
+        </button>
+      </div>
+    `).join('');
+  }
+
+  // Activities List
+  const actContainer = document.getElementById('actListContainer');
+  if (actContainer) {
+    actContainer.innerHTML = portfolioData.activities.map((item, idx) => `
+      <div class="glass-panel p-4 rounded-xl flex items-center justify-between text-xs">
+        <div>
+          <span class="font-bold text-slate-100">${item.title}</span>
+          <span class="text-[11px] text-slate-400 block">${item.organization} • ${item.date}</span>
+        </div>
+        <button onclick="deleteActItem(${idx})" class="px-2.5 py-1 rounded-lg bg-rose-950/80 border border-rose-800 text-rose-300 hover:bg-rose-900 transition-colors">
+          <i class="fas fa-trash-alt mr-1"></i> ลบ
+        </button>
+      </div>
+    `).join('');
+  }
+
+  // Projects List
+  const projContainer = document.getElementById('projListContainer');
+  if (projContainer) {
+    projContainer.innerHTML = portfolioData.projects.map((item, idx) => `
+      <div class="glass-panel p-4 rounded-xl flex items-center justify-between text-xs">
+        <div>
+          <span class="font-bold text-slate-100">${item.title}</span>
+          <span class="text-[11px] text-slate-400 block">${item.categoryName} (${item.date})</span>
+        </div>
+        <button onclick="deleteProjItem(${idx})" class="px-2.5 py-1 rounded-lg bg-rose-950/80 border border-rose-800 text-rose-300 hover:bg-rose-900 transition-colors">
+          <i class="fas fa-trash-alt mr-1"></i> ลบ
+        </button>
+      </div>
+    `).join('');
+  }
+
+  updateCodeViewer();
+}
+
+window.deleteEduItem = function(idx) {
+  if (!confirm('ยืนยันลบรายการการศึกษานี้?')) return;
+  portfolioData.education.splice(idx, 1);
+  syncLocalStorage();
+  renderAllAdminLists();
+  showNotice('ลบรายการการศึกษาเรียบร้อยแล้ว');
+};
+
+window.deleteCertItem = function(idx) {
+  if (!confirm('ยืนยันลบเกียรติบัตรนี้?')) return;
+  portfolioData.certificates.splice(idx, 1);
+  syncLocalStorage();
+  renderAllAdminLists();
+  showNotice('ลบเกียรติบัตรเรียบร้อยแล้ว');
+};
+
+window.deleteActItem = function(idx) {
+  if (!confirm('ยืนยันลบกิจกรรมนี้?')) return;
+  portfolioData.activities.splice(idx, 1);
+  syncLocalStorage();
+  renderAllAdminLists();
+  showNotice('ลบกิจกรรมเรียบร้อยแล้ว');
+};
+
+window.deleteProjItem = function(idx) {
+  if (!confirm('ยืนยันลบโปรเจกต์นี้?')) return;
+  portfolioData.projects.splice(idx, 1);
+  syncLocalStorage();
+  renderAllAdminLists();
+  showNotice('ลบโปรเจกต์เรียบร้อยแล้ว');
+};
+
+/* ==========================================
+   Backup & Export Code
+   ========================================== */
+function updateCodeViewer() {
+  const viewer = document.getElementById('dataJsCodeViewer');
+  if (viewer) {
+    viewer.value = `/**\n * Chamil Kalong - Personal Portfolio Data\n * มหาวิทยาลัยเทคโนโลยีราชมงคลศรีวิชัย สงขลา\n */\n\nconst portfolioData = ${JSON.stringify(portfolioData, null, 2)};`;
+  }
+}
+
+window.copyDataJsCode = function() {
+  const viewer = document.getElementById('dataJsCodeViewer');
+  if (viewer) {
+    navigator.clipboard.writeText(viewer.value).then(() => {
+      showNotice('คัดลอกโค้ด data.js เรียบร้อยแล้ว! นำไปวางทับในไฟล์ assets/js/data.js ได้เลย');
+    });
+  }
+};
+
+window.downloadDataJsFile = function() {
+  const viewer = document.getElementById('dataJsCodeViewer');
+  if (!viewer) return;
+
+  const blob = new Blob([viewer.value], { type: 'text/javascript' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'data.js';
+  a.click();
+  URL.revokeObjectURL(url);
+  showNotice('ดาวน์โหลดไฟล์ data.js เรียบร้อยแล้ว!');
+};
+
+window.resetAllDataToDefault = function() {
+  if (!confirm('คุณต้องการรีเซ็ตข้อมูลทั้งหมดกลับคืนค่าเริ่มต้น (Default State) หรือไม่?')) return;
+  localStorage.removeItem('ck_custom_profile');
+  localStorage.removeItem('ck_portfolio_education');
+  localStorage.removeItem('ck_portfolio_certificates');
+  localStorage.removeItem('ck_portfolio_activities');
+  localStorage.removeItem('ck_portfolio_projects');
+  localStorage.removeItem('ck_custom_certs');
+  localStorage.removeItem('ck_custom_activities');
+  localStorage.removeItem('ck_custom_projects');
+  localStorage.removeItem('ck_custom_education');
+  alert('รีเซ็ตข้อมูลทั้งหมดกลับคืนค่าเริ่มต้นแล้ว!');
+  location.reload();
+};
+
+function showNotice(msg) {
+  const notice = document.getElementById('adminNotice');
+  const text = document.getElementById('adminNoticeText');
+  if (notice && text) {
+    text.textContent = msg;
+    notice.className = 'p-4 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all bg-emerald-950/80 border-emerald-700 text-emerald-200';
+    notice.classList.remove('hidden');
+    setTimeout(() => {
+      notice.classList.add('hidden');
+    }, 4000);
+  }
+}
+
+window.hideNotice = function() {
+  const notice = document.getElementById('adminNotice');
+  if (notice) notice.classList.add('hidden');
+};
