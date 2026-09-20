@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initDevPortal();
   initScrollAnimations();
   initIoTSimulator();
-  initGuestbook();
   initLanguage();
 });
 
@@ -31,7 +30,7 @@ const _i18n = {
     // Nav
     nav_home: 'หน้าแรก', nav_about: 'เกี่ยวกับ', nav_education: 'การศึกษา',
     nav_skills: 'ทักษะ', nav_projects: 'ผลงาน', nav_lab: 'ทดลอง IoT',
-    nav_certs: 'เกียรติบัตร', nav_guestbook: 'สมุดเยี่ยม', nav_contact: 'ติดต่อ',
+    nav_certs: 'เกียรติบัตร', nav_contact: 'ติดต่อ',
     // Hero
     hero_role: 'นักศึกษาชั้นปีที่ 2 · วิศวกรรมไฟฟ้า วิชาเอกเทคนิคคอมพิวเตอร์',
     hero_bio: portfolioData?.personalInfo?.bio || '',
@@ -39,29 +38,26 @@ const _i18n = {
     sec_about: 'เกี่ยวกับฉัน', sec_education: 'ประวัติการศึกษา',
     sec_skills: 'ทักษะและความสามารถ', sec_projects: 'ผลงานโครงงาน',
     sec_activities: 'กิจกรรมและผลงานประทับใจ', sec_certs: 'เกียรติบัตรและวุฒิบัตรรับรอง',
-    sec_guestbook: 'สมุดเยี่ยมชม & ข้อความทายทัก', sec_contact: 'ช่องทางการติดต่อ',
+    sec_contact: 'ช่องทางการติดต่อ',
     sec_lab: 'ห้องทดลองระบบ IoT & ไมโครคอนโทรลเลอร์จำลอง',
     // About section bio card
     about_university: 'มหาวิทยาลัยเทคโนโลยีราชมงคลศรีวิชัย สงขลา (RUTS)',
     // Back to top
-    btt: 'กลับขึ้นบน',
-    // Guestbook form
-    gb_title: 'ฝากข้อความในสมุดเยี่ยม', gb_submit: 'บันทึกข้อความลงสมุดเยี่ยม'
+    btt: 'กลับขึ้นบน'
   },
   en: {
     nav_home: 'Home', nav_about: 'About', nav_education: 'Education',
     nav_skills: 'Skills', nav_projects: 'Projects', nav_lab: 'IoT Lab',
-    nav_certs: 'Certificates', nav_guestbook: 'Guestbook', nav_contact: 'Contact',
+    nav_certs: 'Certificates', nav_contact: 'Contact',
     hero_role: 'Year 2 Student · Electrical Engineering, Computer Technology Major',
     hero_bio: 'I am a 2nd-year Bachelor of Industrial Education student, majoring in Computer Technology at RUTS Songkhla. Passionate about IoT, Embedded Systems, Networking, and Software Development.',
     sec_about: 'About Me', sec_education: 'Education History',
     sec_skills: 'Skills & Expertise', sec_projects: 'Projects',
     sec_activities: 'Activities & Achievements', sec_certs: 'Certificates & Credentials',
-    sec_guestbook: 'Guestbook & Messages', sec_contact: 'Contact',
+    sec_contact: 'Contact',
     sec_lab: 'IoT & Microcontroller Interactive Lab',
     about_university: 'Rajamangala University of Technology Srivijaya, Songkhla',
-    btt: 'Back to Top',
-    gb_title: 'Leave a Message', gb_submit: 'Submit to Guestbook'
+    btt: 'Back to Top'
   }
 };
 
@@ -90,29 +86,31 @@ function _applyLanguage(lang) {
     if (t[key]) el.textContent = t[key];
   });
 
+  const info = portfolioData?.personalInfo || {};
+
   // Hero name
   const nameEl = document.getElementById('heroName');
   if (nameEl) nameEl.textContent = lang === 'th'
-    ? (portfolioData?.personalInfo?.nameTh || 'ชามิล กาหลง')
-    : (portfolioData?.personalInfo?.nameEn || 'Chamil Kalong');
+    ? (info.nameTh || 'ชามิล กาหลง')
+    : (info.nameEn || 'Chamil Kalong');
 
   // Hero role
   const roleEl = document.getElementById('heroRole');
-  if (roleEl) roleEl.textContent = t.hero_role;
+  if (roleEl) roleEl.textContent = (lang === 'th' ? info.role : info.roleEn) || t.hero_role;
 
   // Hero bio
   const bioEl = document.getElementById('heroBio');
-  if (bioEl) bioEl.textContent = t.hero_bio;
+  if (bioEl) bioEl.textContent = (lang === 'th' ? info.bio : info.bioEn) || t.hero_bio;
 
   // Hero university
   const uniEl = document.getElementById('heroUniversity');
-  if (uniEl) uniEl.textContent = t.about_university;
+  if (uniEl) uniEl.textContent = (lang === 'th' ? info.university : info.universityEn) || t.about_university;
 
   // Section headings (h3 with data-i18n-section)
   const sectionMap = {
     about: 'sec_about', education: 'sec_education', skills: 'sec_skills',
     projects: 'sec_projects', 'tech-lab': 'sec_lab', activities: 'sec_activities',
-    certificates: 'sec_certs', guestbook: 'sec_guestbook', contact: 'sec_contact'
+    certificates: 'sec_certs', contact: 'sec_contact'
   };
   Object.entries(sectionMap).forEach(([id, key]) => {
     const sec = document.getElementById(id);
@@ -121,150 +119,9 @@ function _applyLanguage(lang) {
       if (h3) h3.textContent = t[key];
     }
   });
-
-  // Guestbook form title & button
-  const gbTitle = document.querySelector('#guestbook h4');
-  if (gbTitle) gbTitle.innerHTML = `<i class="fas fa-pen text-slate-400"></i> ${t.gb_title}`;
-  const gbBtn = document.querySelector('#guestbookForm button[type=submit]');
-  if (gbBtn) gbBtn.innerHTML = `<i class="fas fa-paper-plane"></i> ${t.gb_submit}`;
 }
 
-/* ==========================================
-   Guestbook - ฝากข้อความสมุดเยี่ยม
-   ========================================== */
-const GUESTBOOK_KEY = 'ck-guestbook-entries';
 
-// ข้อความตัวอย่าง (default) ถ้ายังไม่มีข้อมูลใน localStorage
-const _defaultGuestbookEntries = [
-  {
-    name: 'อ.ธีรพงษ์ มณีรัตน์',
-    role: 'อาจารย์ประจำสาขาครุศาสตร์อุตสาหกรรม',
-    message: 'ชามิลเป็นนักศึกษาที่ตั้งใจเรียนและมีความสามารถด้าน IoT อย่างโดดเด่น ขอให้ประสบความสำเร็จในอนาคต',
-    date: '2026-09-10'
-  },
-  {
-    name: 'พี่ต้น รุ่น 62',
-    role: 'รุ่นพี่ ปวส. เทคนิคคอมพิวเตอร์',
-    message: 'น้องชามิลเก่งมากเลย เว็บสวยมาก โชคดีกับการเรียนนะ 💪',
-    date: '2026-09-15'
-  }
-];
-
-function initGuestbook() {
-  _renderGuestbook();
-
-  const form = document.getElementById('guestbookForm');
-  if (!form) return;
-
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-
-    const name = document.getElementById('gbName').value.trim();
-    const role = document.getElementById('gbRole').value.trim();
-    const message = document.getElementById('gbMessage').value.trim();
-
-    if (!name || !message) return;
-
-    const entries = _getGuestbookEntries();
-    const newEntry = {
-      name,
-      role: role || null,
-      message,
-      date: new Date().toISOString().split('T')[0]
-    };
-
-    // เพิ่มข้อความใหม่ไว้บนสุด
-    entries.unshift(newEntry);
-    localStorage.setItem(GUESTBOOK_KEY, JSON.stringify(entries));
-
-    // Clear form
-    form.reset();
-
-    // Re-render and scroll to list
-    _renderGuestbook();
-
-    // Flash success feedback
-    const btn = form.querySelector('button[type=submit]');
-    const origHTML = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-check text-emerald-400"></i> บันทึกแล้ว!';
-    btn.disabled = true;
-    setTimeout(() => {
-      btn.innerHTML = origHTML;
-      btn.disabled = false;
-    }, 2000);
-
-    // Scroll to list
-    const list = document.getElementById('guestbookList');
-    if (list) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-}
-
-function _getGuestbookEntries() {
-  try {
-    const stored = localStorage.getItem(GUESTBOOK_KEY);
-    return stored ? JSON.parse(stored) : [..._defaultGuestbookEntries];
-  } catch {
-    return [..._defaultGuestbookEntries];
-  }
-}
-
-function _renderGuestbook() {
-  const list = document.getElementById('guestbookList');
-  if (!list) return;
-
-  const entries = _getGuestbookEntries();
-
-  if (entries.length === 0) {
-    list.innerHTML = `
-      <div class="text-center py-12 text-slate-500">
-        <i class="fas fa-book-open text-3xl mb-3 block opacity-40"></i>
-        <p class="text-sm">ยังไม่มีข้อความ เป็นคนแรกที่ฝากข้อความได้เลย!</p>
-      </div>`;
-    return;
-  }
-
-  const avatarColors = [
-    'bg-slate-700 text-slate-200',
-    'bg-emerald-900 text-emerald-300',
-    'bg-cyan-900 text-cyan-300',
-    'bg-indigo-900 text-indigo-300',
-    'bg-rose-900 text-rose-300'
-  ];
-
-  list.innerHTML = entries.map((entry, i) => {
-    const initial = entry.name.charAt(0).toUpperCase();
-    const colorClass = avatarColors[i % avatarColors.length];
-    const dateStr = entry.date
-      ? new Date(entry.date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })
-      : '';
-
-    return `
-      <div class="glass-panel p-4 rounded-2xl border border-slate-800 hover:border-slate-700 transition-colors animate-fade-in">
-        <div class="flex items-start gap-3">
-          <div class="w-9 h-9 rounded-xl ${colorClass} flex items-center justify-center font-bold text-sm flex-shrink-0">
-            ${initial}
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between gap-2 flex-wrap">
-              <h5 class="text-sm font-bold text-slate-100">${_escapeHtml(entry.name)}</h5>
-              <span class="text-[10px] text-slate-500 font-mono">${dateStr}</span>
-            </div>
-            ${entry.role ? `<p class="text-[11px] text-slate-400 mb-1.5">${_escapeHtml(entry.role)}</p>` : ''}
-            <p class="text-xs text-slate-300 leading-relaxed">${_escapeHtml(entry.message)}</p>
-          </div>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-function _escapeHtml(str) {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
 
 /* ==========================================
    IoT Simulator - Tech Lab Section
@@ -897,7 +754,7 @@ function initScrollAnimations() {
 const DEV_USER = 'chamil';
 const DEV_PASS = '280225';
 
-function loadCustomDevData() {
+async function loadCustomDevData() {
   try {
     const customProfile = JSON.parse(localStorage.getItem('ck_custom_profile') || 'null');
     if (customProfile) {
@@ -924,7 +781,62 @@ function loadCustomDevData() {
       portfolioData.projects = JSON.parse(storedProjs);
     }
   } catch (e) {
-    console.error('Error loading custom dev data:', e);
+    console.error('Error loading local dev data:', e);
+  }
+
+  // Cloud Sync: Fetch from Firebase Firestore DB if configured
+  if (typeof isFirebaseConfigured === 'function' && isFirebaseConfigured()) {
+    try {
+      const [fbProfile, fbEdu, fbCerts, fbActs, fbProjs] = await Promise.all([
+        fetchFirebaseProfile(),
+        fetchFirebaseEducation(),
+        fetchFirebaseCertificates(),
+        fetchFirebaseActivities(),
+        fetchFirebaseProjects()
+      ]);
+
+      let updated = false;
+
+      if (fbProfile) {
+        portfolioData.personalInfo = {
+          ...portfolioData.personalInfo,
+          nameTh: fbProfile.nameTh || portfolioData.personalInfo.nameTh,
+          nameEn: fbProfile.nameEn || portfolioData.personalInfo.nameEn,
+          nickname: fbProfile.nickname || portfolioData.personalInfo.nickname,
+          role: fbProfile.role || portfolioData.personalInfo.role,
+          university: fbProfile.university || portfolioData.personalInfo.university,
+          degree: fbProfile.degree || portfolioData.personalInfo.degree,
+          email: fbProfile.email || portfolioData.personalInfo.email,
+          phone: fbProfile.phone || portfolioData.personalInfo.phone,
+          location: fbProfile.location || portfolioData.personalInfo.location,
+          bio: fbProfile.bio || portfolioData.personalInfo.bio,
+          avatarImage: fbProfile.avatarImage || portfolioData.personalInfo.avatarImage,
+          socials: {
+            github: fbProfile.socials?.github || portfolioData.personalInfo.socials?.github,
+            linkedin: fbProfile.socials?.linkedin || portfolioData.personalInfo.socials?.linkedin,
+            facebook: fbProfile.socials?.facebook || portfolioData.personalInfo.socials?.facebook,
+            emailLink: fbProfile.email ? `mailto:${fbProfile.email}` : portfolioData.personalInfo.socials?.emailLink
+          }
+        };
+        updated = true;
+      }
+
+      if (fbEdu && fbEdu.length > 0) { portfolioData.education = fbEdu; updated = true; }
+      if (fbCerts && fbCerts.length > 0) { portfolioData.certificates = fbCerts; updated = true; }
+      if (fbActs && fbActs.length > 0) { portfolioData.activities = fbActs; updated = true; }
+      if (fbProjs && fbProjs.length > 0) { portfolioData.projects = fbProjs; updated = true; }
+
+      if (updated) {
+        renderHeroAndAbout();
+        renderEducation();
+        renderProjects('all');
+        renderActivities();
+        renderCertificates();
+        if (typeof _applyLanguage === 'function') _applyLanguage(_currentLang);
+      }
+    } catch (err) {
+      console.warn('Firebase fetch error, using local data:', err);
+    }
   }
 }
 

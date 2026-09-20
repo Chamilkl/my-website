@@ -88,7 +88,6 @@
 
         <a href="#projects" class="nav-link text-sm px-3 py-2 rounded-lg" data-i18n="nav_projects">ผลงาน</a>
         <a href="#certificates" class="nav-link text-sm px-3 py-2 rounded-lg" data-i18n="nav_certs">เกียรติบัตร</a>
-        <a href="#guestbook" class="nav-link text-sm px-3 py-2 rounded-lg" data-i18n="nav_guestbook">สมุดเยี่ยม</a>
         <a href="#contact" class="nav-link text-sm px-3 py-2 rounded-lg" data-i18n="nav_contact">ติดต่อ</a>
       </nav>
 
@@ -139,9 +138,6 @@
       </a>
       <a href="#certificates" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-slate-200 hover:text-white hover:bg-slate-800/50 rounded-xl transition-colors">
         <i class="fas fa-award w-4 text-slate-500 text-sm"></i> เกียรติบัตร
-      </a>
-      <a href="#guestbook" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-slate-200 hover:text-white hover:bg-slate-800/50 rounded-xl transition-colors">
-        <i class="fas fa-book-open w-4 text-slate-500 text-sm"></i> สมุดเยี่ยม
       </a>
       <a href="#contact" class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-slate-200 hover:text-white hover:bg-slate-800/50 rounded-xl transition-colors">
         <i class="fas fa-envelope w-4 text-slate-500 text-sm"></i> ติดต่อ
@@ -447,49 +443,6 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="certificatesGrid">
         <!-- Rendered by JS -->
-      </div>
-    </div>
-  </section>
-
-  <!-- ==================== 8.5 GUESTBOOK & RECOMMENDATIONS ==================== -->
-  <section id="guestbook" class="py-24 border-t border-slate-800/60 bg-slate-900/30 relative">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center max-w-3xl mx-auto mb-16">
-        <h2 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2"><i class="fas fa-comments mr-1"></i> GUESTBOOK</h2>
-        <h3 class="text-3xl font-extrabold text-gradient-gray">สมุดเยี่ยมชม & ข้อความทายทัก</h3>
-        <p class="text-sm text-slate-400 mt-2">ร่วมพิมพ์ข้อความทายทัก หรือเขียนคำอวยพร/ข้อเสนอแนะถึง ชามิล กาหลง</p>
-        <div class="w-16 h-1 bg-slate-600 mx-auto mt-4 rounded-full"></div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        <!-- Add Entry Form -->
-        <div class="lg:col-span-5 glass-panel p-6 rounded-3xl">
-          <h4 class="text-sm font-bold text-slate-100 mb-4 flex items-center gap-2">
-            <i class="fas fa-pen text-slate-400"></i> ฝากข้อความในสมุดเยี่ยม
-          </h4>
-          <form id="guestbookForm" class="space-y-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-1">ชื่อของคุณ *</label>
-              <input type="text" id="gbName" required placeholder="เช่น อ.สมชาย / พี่รุ่นพี่เทคนิคคอม" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-slate-400" />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-1">บทบาท / สถาบัน (ระบุหรือไม่ก็ได้)</label>
-              <input type="text" id="gbRole" placeholder="เช่น อาจารย์ประจำสาขา / รุ่นพี่ ปวช." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-slate-400" />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-1">ข้อความของคุณ *</label>
-              <textarea id="gbMessage" rows="3" required placeholder="เขียนคำทายทัก ข้อเสนอแนะ หรือความประทับใจ..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-slate-400 resize-none"></textarea>
-            </div>
-            <button type="submit" class="w-full btn-primary-gray py-2.5 text-xs flex items-center justify-center gap-2">
-              <i class="fas fa-paper-plane"></i> บันทึกข้อความลงสมุดเยี่ยม
-            </button>
-          </form>
-        </div>
-
-        <!-- Guestbook Entries List -->
-        <div class="lg:col-span-7 space-y-4 max-h-[500px] overflow-y-auto pr-1" id="guestbookList">
-          <!-- Rendered by JS -->
-        </div>
       </div>
     </div>
   </section>
@@ -971,6 +924,10 @@
   </div>
 
   <!-- JavaScript Modules -->
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-storage-compat.js"></script>
+  <script src="assets/js/firebase-config.js?v=1.0.0"></script>
   <script src="assets/js/data.js?v=1.0.2"></script>
   <script src="assets/js/main.js?v=1.0.2"></script>
 </body>

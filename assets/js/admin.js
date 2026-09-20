@@ -2,7 +2,7 @@
  * Chamil Kalong - Dev Admin Portal Logic
  * Handles Authentication, Profile Avatar & Bio Editing,
  * Content Management (Education, Certificates, Activities, Projects),
- * LocalStorage Persistence, and Data.js Export.
+ * LocalStorage Persistence, Data.js Export, and Google Firebase Cloud Sync.
  */
 
 const DEV_USER = 'chamil';
@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCustomDevData();
   checkAuth();
   initAdminEventListeners();
+  initFirebaseUI();
 });
 
 function initCustomDevData() {
@@ -66,6 +67,7 @@ function checkAuth() {
     loadProfileForm();
     renderAllAdminLists();
     updateCodeViewer();
+    initFirebaseUI();
   } else {
     if (loginScreen) loginScreen.classList.remove('hidden');
     if (adminDashboard) adminDashboard.classList.add('hidden');
@@ -137,6 +139,88 @@ window.handleDevLogout = function() {
 };
 
 /* ==========================================
+   Firebase Integration & UI Status
+   ========================================== */
+function initFirebaseUI() {
+  const jsonInput = document.getElementById('firebaseConfigJsonInput');
+  const savedConfig = localStorage.getItem('ck_firebase_config');
+
+  if (jsonInput) {
+    if (savedConfig) {
+      try {
+        jsonInput.value = JSON.stringify(JSON.parse(savedConfig), null, 2);
+      } catch {
+        jsonInput.value = savedConfig;
+      }
+    } else if (typeof DEFAULT_FIREBASE_CONFIG !== 'undefined') {
+      jsonInput.value = JSON.stringify(DEFAULT_FIREBASE_CONFIG, null, 2);
+    }
+  }
+
+  updateFirebaseStatusBadge();
+}
+
+function updateFirebaseStatusBadge() {
+  const badge = document.getElementById('firebaseStatusBadge');
+  if (!badge) return;
+
+  if (typeof isFirebaseConfigured === 'function' && isFirebaseConfigured()) {
+    badge.textContent = '🔥 เชื่อมต่อ Google Firebase แล้ว (Cloud Sync)';
+    badge.className = 'text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-950/80 text-amber-300 border border-amber-700';
+  } else {
+    badge.textContent = 'ยังไม่ได้เชื่อมต่อ (ใช้ LocalStorage)';
+    badge.className = 'text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700';
+  }
+}
+
+window.saveFirebaseSettings = function() {
+  const inputVal = document.getElementById('firebaseConfigJsonInput').value.trim();
+  if (!inputVal) {
+    localStorage.removeItem('ck_firebase_config');
+    showNotice('ลบการตั้งค่า Firebase แล้ว');
+    updateFirebaseStatusBadge();
+    return;
+  }
+
+  try {
+    let configObj = null;
+    if (inputVal.startsWith('{')) {
+      configObj = JSON.parse(inputVal);
+    } else if (inputVal.includes('apiKey')) {
+      // Parse object snippet if copied directly from Firebase Console JS snippet
+      const cleanJson = inputVal
+        .replace(/const firebaseConfig =/g, '')
+        .replace(/;/g, '')
+        .trim();
+      configObj = eval(`(${cleanJson})`);
+    }
+
+    if (configObj && configObj.apiKey) {
+      localStorage.setItem('ck_firebase_config', JSON.stringify(configObj));
+      if (typeof initFirebase === 'function') {
+        initFirebase();
+      }
+      updateFirebaseStatusBadge();
+      showNotice('บันทึกค่า Firebase Config เรียบร้อยแล้ว!');
+    } else {
+      alert('❌ โครงสร้าง Firebase Config ไม่ถูกต้อง กรุณาตรวจสอบ apiKey หรือ JSON');
+    }
+  } catch (err) {
+    alert('❌ ไม่สามารถอ่านค่า Firebase Config ได้ กรุณาตรวจสอบรูปแบบ JSON');
+  }
+};
+
+window.testFirebaseConnection = async function() {
+  saveFirebaseSettings();
+  if (typeof isFirebaseConfigured === 'function' && isFirebaseConfigured()) {
+    const profile = await fetchFirebaseProfile();
+    alert('✅ เชื่อมต่อ Google Firebase สำเร็จเรียบร้อยแล้ว!');
+  } else {
+    alert('❌ ไม่สามารถเชื่อมต่อ Firebase ได้ กรุณาตรวจสอบ Config JSON');
+  }
+};
+
+/* ==========================================
    Tab Switcher Logic
    ========================================== */
 window.showAdminTab = function(tabName) {
@@ -185,10 +269,25 @@ function loadProfileForm() {
   if (document.getElementById('avatarPreview')) document.getElementById('avatarPreview').src = avatarUrl;
 }
 
-function handleAvatarFileUpload(e) {
+async function handleAvatarFileUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
 
+  // Upload to Firebase Cloud Storage if configured
+  if (typeof isFirebaseConfigured === 'function' && isFirebaseConfigured()) {
+    showNotice('กำลังอัปโหลดรูปภาพไปยัง Firebase Storage...');
+    const cloudUrl = await uploadFirebaseImage(file, 'avatars');
+    if (cloudUrl) {
+      const preview = document.getElementById('avatarPreview');
+      const urlInput = document.getElementById('avatarUrlInput');
+      if (preview) preview.src = cloudUrl;
+      if (urlInput) urlInput.value = cloudUrl;
+      showNotice('อัปโหลดรูปภาพขึ้น Firebase Storage สำเร็จ!');
+      return;
+    }
+  }
+
+  // Fallback to Data URL for LocalStorage
   const reader = new FileReader();
   reader.onload = function(event) {
     const dataUrl = event.target.result;
@@ -207,7 +306,7 @@ window.resetDefaultAvatar = function() {
   if (document.getElementById('avatarUrlInput')) document.getElementById('avatarUrlInput').value = defaultPath;
 };
 
-function handleProfileSave(e) {
+async function handleProfileSave(e) {
   e.preventDefault();
 
   const updatedProfile = {
@@ -227,14 +326,25 @@ function handleProfileSave(e) {
   portfolioData.personalInfo = { ...portfolioData.personalInfo, ...updatedProfile };
   syncLocalStorage();
 
-  showNotice('บันทึกข้อมูลโปรไฟล์รูปภาพและข้อมูลส่วนตัวเรียบร้อยแล้ว!');
+  // Sync to Firebase Cloud if configured
+  if (typeof isFirebaseConfigured === 'function' && isFirebaseConfigured()) {
+    const ok = await saveFirebaseProfile(portfolioData.personalInfo);
+    if (ok) {
+      showNotice('บันทึกข้อมูลโปรไฟล์และซิงค์ไปยัง Firebase Cloud เรียบร้อยแล้ว!');
+    } else {
+      showNotice('บันทึกในเครื่องเรียบร้อยแล้ว (ไม่สามารถซิงค์ไป Firebase ได้)');
+    }
+  } else {
+    showNotice('บันทึกข้อมูลโปรไฟล์เรียบร้อยแล้ว (เก็บใน LocalStorage)');
+  }
+
   updateCodeViewer();
 }
 
 /* ==========================================
    Content Handlers (Add / Delete)
    ========================================== */
-function handleAddEdu(e) {
+async function handleAddEdu(e) {
   e.preventDefault();
   const newItem = {
     period: document.getElementById('eduPeriod').value.trim(),
@@ -247,12 +357,17 @@ function handleAddEdu(e) {
 
   portfolioData.education.unshift(newItem);
   syncLocalStorage();
+
+  if (typeof isFirebaseConfigured === 'function' && isFirebaseConfigured()) {
+    await saveFirebaseEducationList(portfolioData.education);
+  }
+
   renderAllAdminLists();
   document.getElementById('adminEduForm').reset();
   showNotice('เพิ่มประวัติการศึกษาใหม่เรียบร้อยแล้ว!');
 }
 
-function handleAddCert(e) {
+async function handleAddCert(e) {
   e.preventDefault();
   const newItem = {
     id: `cert-${Date.now()}`,
@@ -268,12 +383,17 @@ function handleAddCert(e) {
 
   portfolioData.certificates.unshift(newItem);
   syncLocalStorage();
+
+  if (typeof isFirebaseConfigured === 'function' && isFirebaseConfigured()) {
+    await saveFirebaseCertificateList(portfolioData.certificates);
+  }
+
   renderAllAdminLists();
   document.getElementById('adminCertForm').reset();
   showNotice('เพิ่มเกียรติบัตรใหม่เรียบร้อยแล้ว!');
 }
 
-function handleAddAct(e) {
+async function handleAddAct(e) {
   e.preventDefault();
   const newItem = {
     id: `act-${Date.now()}`,
@@ -286,12 +406,17 @@ function handleAddAct(e) {
 
   portfolioData.activities.unshift(newItem);
   syncLocalStorage();
+
+  if (typeof isFirebaseConfigured === 'function' && isFirebaseConfigured()) {
+    await saveFirebaseActivityList(portfolioData.activities);
+  }
+
   renderAllAdminLists();
   document.getElementById('adminActForm').reset();
   showNotice('เพิ่มกิจกรรมใหม่เรียบร้อยแล้ว!');
 }
 
-function handleAddProj(e) {
+async function handleAddProj(e) {
   e.preventDefault();
   const tagsStr = document.getElementById('projTagsInput').value.trim();
   const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()) : ['Project'];
@@ -313,6 +438,11 @@ function handleAddProj(e) {
 
   portfolioData.projects.unshift(newItem);
   syncLocalStorage();
+
+  if (typeof isFirebaseConfigured === 'function' && isFirebaseConfigured()) {
+    await saveFirebaseProjectList(portfolioData.projects);
+  }
+
   renderAllAdminLists();
   document.getElementById('adminProjForm').reset();
   showNotice('เพิ่มโปรเจกต์ใหม่เรียบร้อยแล้ว!');
@@ -389,34 +519,46 @@ function renderAllAdminLists() {
   updateCodeViewer();
 }
 
-window.deleteEduItem = function(idx) {
+window.deleteEduItem = async function(idx) {
   if (!confirm('ยืนยันลบรายการการศึกษานี้?')) return;
   portfolioData.education.splice(idx, 1);
   syncLocalStorage();
+  if (typeof isFirebaseConfigured === 'function' && isFirebaseConfigured()) {
+    await saveFirebaseEducationList(portfolioData.education);
+  }
   renderAllAdminLists();
   showNotice('ลบรายการการศึกษาเรียบร้อยแล้ว');
 };
 
-window.deleteCertItem = function(idx) {
+window.deleteCertItem = async function(idx) {
   if (!confirm('ยืนยันลบเกียรติบัตรนี้?')) return;
   portfolioData.certificates.splice(idx, 1);
   syncLocalStorage();
+  if (typeof isFirebaseConfigured === 'function' && isFirebaseConfigured()) {
+    await saveFirebaseCertificateList(portfolioData.certificates);
+  }
   renderAllAdminLists();
   showNotice('ลบเกียรติบัตรเรียบร้อยแล้ว');
 };
 
-window.deleteActItem = function(idx) {
+window.deleteActItem = async function(idx) {
   if (!confirm('ยืนยันลบกิจกรรมนี้?')) return;
   portfolioData.activities.splice(idx, 1);
   syncLocalStorage();
+  if (typeof isFirebaseConfigured === 'function' && isFirebaseConfigured()) {
+    await saveFirebaseActivityList(portfolioData.activities);
+  }
   renderAllAdminLists();
   showNotice('ลบกิจกรรมเรียบร้อยแล้ว');
 };
 
-window.deleteProjItem = function(idx) {
+window.deleteProjItem = async function(idx) {
   if (!confirm('ยืนยันลบโปรเจกต์นี้?')) return;
   portfolioData.projects.splice(idx, 1);
   syncLocalStorage();
+  if (typeof isFirebaseConfigured === 'function' && isFirebaseConfigured()) {
+    await saveFirebaseProjectList(portfolioData.projects);
+  }
   renderAllAdminLists();
   showNotice('ลบโปรเจกต์เรียบร้อยแล้ว');
 };
@@ -465,6 +607,7 @@ window.resetAllDataToDefault = function() {
   localStorage.removeItem('ck_custom_activities');
   localStorage.removeItem('ck_custom_projects');
   localStorage.removeItem('ck_custom_education');
+  localStorage.removeItem('ck_firebase_config');
   alert('รีเซ็ตข้อมูลทั้งหมดกลับคืนค่าเริ่มต้นแล้ว!');
   location.reload();
 };

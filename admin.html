@@ -133,12 +133,6 @@
           <i class="fas fa-database text-purple-400 w-4"></i>
           <span>สำรองข้อมูล data.js</span>
         </button>
-
-        <button onclick="showAdminTab('guestbook')" id="sideBtn-guestbook" class="admin-side-btn w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-all">
-          <i class="fas fa-book-open text-cyan-400 w-4"></i>
-          <span>จัดการสมุดเยี่ยม</span>
-          <span id="gbAdminBadge" class="ml-auto bg-cyan-900/60 text-cyan-300 border border-cyan-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
-        </button>
       </aside>
 
       <!-- Main Admin Content Area -->
@@ -469,61 +463,48 @@
             </div>
           </div>
 
-          <div class="space-y-3">
+          <!-- Firebase Real-Time Cloud Integration Box -->
+          <div class="bg-slate-900/80 p-6 rounded-2xl border border-slate-700/80 space-y-4 mt-6">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h4 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <i class="fas fa-fire text-amber-500"></i>
+                ตั้งค่าเชื่อมต่อ Google Firebase Cloud (Firestore & Storage)
+              </h4>
+              <span id="firebaseStatusBadge" class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+                ยังไม่ได้เชื่อมต่อ
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              ก๊อปปี้คีย์ <code class="text-amber-300 font-mono">firebaseConfig</code> จาก Firebase Console มาวางในช่องด้านล่าง แล้วกดบันทึก ข้อมูลรูปภาพและโปรไฟล์จะถูกเก็บลง Cloud ออนไลน์ถาวรทันที!
+            </p>
+
+            <div class="space-y-3">
+              <label class="block text-xs font-semibold text-slate-300">วาง firebaseConfig JSON (หรือคัดลอกเฉพาะค่าจาก Firebase Console):</label>
+              <textarea id="firebaseConfigJsonInput" rows="5" placeholder='{
+  "apiKey": "AIzaSy...",
+  "authDomain": "my-portfolio.firebaseapp.com",
+  "projectId": "my-portfolio",
+  "storageBucket": "my-portfolio.appspot.com",
+  "appId": "1:12345..."
+}' class="w-full p-3 font-mono text-xs bg-slate-950 border border-slate-700 text-slate-100 rounded-xl focus:outline-none focus:border-amber-400"></textarea>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <span class="text-[11px] text-slate-500">* หากไม่ได้ใส่ Config ระบบจะ Fallback ไปใช้ LocalStorage และ data.js ดั้งเดิม</span>
+              <div class="flex gap-2">
+                <button onclick="saveFirebaseSettings()" class="btn-primary-gray text-xs py-2 px-4 flex items-center gap-1.5">
+                  <i class="fas fa-save text-amber-400"></i> บันทึกค่า Firebase Config
+                </button>
+                <button onclick="testFirebaseConnection()" class="btn-secondary-gray text-xs py-2 px-3 flex items-center gap-1.5">
+                  <i class="fas fa-sync-alt"></i> ทดสอบการเชื่อมต่อ
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-3 pt-4">
             <label class="block text-xs font-semibold text-slate-300">ซอร์สโค้ด portfolioData ปัจจุบัน:</label>
             <textarea id="dataJsCodeViewer" rows="16" readonly class="w-full p-4 font-mono text-xs bg-slate-950 text-slate-300 rounded-2xl border border-slate-800 focus:outline-none"></textarea>
-          </div>
-        </div>
-
-        <!-- ================= TAB 7: GUESTBOOK MANAGEMENT ================= -->
-        <div id="adminTab-guestbook" class="admin-tab-content hidden glass-panel p-8 rounded-3xl space-y-6">
-          <div class="border-b border-slate-800 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h3 class="text-xl font-bold text-slate-100 flex items-center gap-2">
-                <i class="fas fa-book-open text-cyan-400"></i>
-                จัดการสมุดเยี่ยมชม (Guestbook Manager)
-              </h3>
-              <p class="text-xs text-slate-400 mt-1">ลบ แก้ไข หรือล้างข้อความในสมุดเยี่ยมทั้งหมด</p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <button onclick="gbAdminExport()" class="btn-secondary-gray text-xs py-2 px-4 flex items-center gap-1.5">
-                <i class="fas fa-download"></i> Export JSON
-              </button>
-              <button onclick="gbAdminClearAll()" class="px-3 py-2 text-xs font-semibold rounded-xl bg-rose-950/60 border border-rose-800 text-rose-300 hover:bg-rose-900 transition-colors flex items-center gap-1.5">
-                <i class="fas fa-trash-alt"></i> ล้างทั้งหมด
-              </button>
-            </div>
-          </div>
-
-          <!-- Stats bar -->
-          <div class="flex items-center gap-4 text-xs text-slate-400">
-            <span><i class="fas fa-comments mr-1 text-cyan-500"></i> ข้อความทั้งหมด: <span id="gbAdminCount" class="text-slate-100 font-bold">0</span> รายการ</span>
-            <span class="text-slate-700">|</span>
-            <button onclick="gbAdminRefresh()" class="text-cyan-400 hover:text-cyan-200 transition-colors flex items-center gap-1">
-              <i class="fas fa-sync-alt text-[10px]"></i> รีเฟรช
-            </button>
-          </div>
-
-          <!-- Add / Edit inline form -->
-          <div class="bg-slate-900/60 p-5 rounded-2xl border border-slate-800 space-y-3">
-            <h4 class="text-xs font-bold text-slate-200 flex items-center gap-2">
-              <i class="fas fa-plus-circle text-cyan-400"></i> เพิ่มข้อความเอง (Admin Post)
-            </h4>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input type="text" id="gbAdminName" placeholder="ชื่อ *" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-slate-400" />
-              <input type="text" id="gbAdminRole" placeholder="บทบาท / สถาบัน (ระบุหรือไม่ก็ได้)" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-slate-400" />
-              <textarea id="gbAdminMsg" rows="2" placeholder="ข้อความ *" class="sm:col-span-2 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-slate-100 resize-none focus:outline-none focus:border-slate-400"></textarea>
-            </div>
-            <div class="flex justify-end">
-              <button onclick="gbAdminAdd()" class="btn-primary-gray text-xs py-2 px-5 flex items-center gap-1.5">
-                <i class="fas fa-plus"></i> เพิ่มข้อความ
-              </button>
-            </div>
-          </div>
-
-          <!-- Entries List -->
-          <div id="gbAdminList" class="space-y-3">
-            <p class="text-xs text-slate-500 text-center py-8"><i class="fas fa-spinner fa-spin mr-2"></i> กำลังโหลด...</p>
           </div>
         </div>
 
@@ -532,6 +513,10 @@
   </div>
 
   <!-- JavaScript Modules -->
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-storage-compat.js"></script>
+  <script src="assets/js/firebase-config.js?v=1.0.0"></script>
   <script src="assets/js/data.js?v=1.0.2"></script>
   <script src="assets/js/admin.js?v=1.0.2"></script>
 </body>
