@@ -6,6 +6,7 @@
 const DEFAULT_FIREBASE_CONFIG = {
   apiKey: "AIzaSyAdXGqrFSv-71uCr4xF4IKdVLfGTRudEIk",
   authDomain: "my-portfolio-7e48e.firebaseapp.com",
+  databaseURL: "https://my-portfolio-7e48e-default-rtdb.firebaseio.com",
   projectId: "my-portfolio-7e48e",
   storageBucket: "my-portfolio-7e48e.firebasestorage.app",
   messagingSenderId: "144031863829",

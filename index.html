@@ -114,6 +114,12 @@
           <i id="themeIcon" class="fas fa-sun text-yellow-400"></i>
         </button>
 
+        <!-- PWA Install Button (hidden until beforeinstallprompt fires) -->
+        <button id="navInstallBtn" onclick="handlePWAInstall()" title="ติดตั้งแอปพลิเคชัน" aria-label="Install App" class="hidden h-9 px-3 rounded-xl glass-panel flex items-center justify-center text-slate-300 hover:text-white transition-all text-xs font-semibold gap-1.5 border border-slate-600 hover:border-slate-400">
+          <i class="fas fa-download text-slate-300 text-sm"></i>
+          <span class="hidden sm:inline">ติดตั้ง</span>
+        </button>
+
         <button id="mobileMenuBtn" aria-label="Open Navigation Menu" class="md:hidden w-9 h-9 rounded-xl glass-panel flex items-center justify-center text-slate-300">
           <i class="fas fa-bars"></i>
         </button>
@@ -1215,8 +1221,9 @@
   <!-- JavaScript Modules -->
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-storage-compat.js"></script>
-  <script src="assets/js/firebase-config.js?v=1.0.0"></script>
+  <script src="assets/js/firebase-config.js?v=1.0.1"></script>
   <script src="assets/js/data.js?v=1.0.2"></script>
   <script src="assets/js/main.js?v=1.0.3"></script>
 </body>
