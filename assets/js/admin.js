@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initFirebaseUI();
 });
 
-function initCustomDevData() {
+async function initCustomDevData() {
   try {
     const customProfile = JSON.parse(localStorage.getItem('ck_custom_profile') || 'null');
     if (customProfile) {
@@ -33,9 +33,36 @@ function initCustomDevData() {
 
     const storedProjs = localStorage.getItem('ck_portfolio_projects');
     if (storedProjs) portfolioData.projects = JSON.parse(storedProjs);
-
   } catch (e) {
     console.error('Error loading custom dev data:', e);
+  }
+
+  // Cloud Sync: Fetch from Firebase Firestore DB if configured
+  if (typeof isFirebaseConfigured === 'function' && isFirebaseConfigured()) {
+    try {
+      const [fbProfile, fbEdu, fbCerts, fbActs, fbProjs] = await Promise.all([
+        fetchFirebaseProfile(),
+        fetchFirebaseEducation(),
+        fetchFirebaseCertificates(),
+        fetchFirebaseActivities(),
+        fetchFirebaseProjects()
+      ]);
+
+      if (fbProfile) {
+        portfolioData.personalInfo = { ...portfolioData.personalInfo, ...fbProfile };
+      }
+      if (fbEdu && fbEdu.length > 0) portfolioData.education = fbEdu;
+      if (fbCerts && fbCerts.length > 0) portfolioData.certificates = fbCerts;
+      if (fbActs && fbActs.length > 0) portfolioData.activities = fbActs;
+      if (fbProjs && fbProjs.length > 0) portfolioData.projects = fbProjs;
+
+      loadProfileForm();
+      renderAllAdminLists();
+      updateCodeViewer();
+      syncLocalStorage();
+    } catch (err) {
+      console.warn('Firebase sync on admin load failed, using local data:', err);
+    }
   }
 }
 
@@ -115,6 +142,11 @@ function initAdminEventListeners() {
       if (url) {
         const preview = document.getElementById('avatarPreview');
         if (preview) preview.src = url;
+        portfolioData.personalInfo.avatarImage = url;
+        syncLocalStorage();
+        if (typeof isFirebaseConfigured === 'function' && isFirebaseConfigured()) {
+          saveFirebaseProfile(portfolioData.personalInfo);
+        }
       }
     });
   }
@@ -360,10 +392,12 @@ async function handleAvatarFileUpload(e) {
   // Compress client-side
   const { file: processedFile, dataUrl } = await compressImageFile(file, 500, 0.82);
 
-  // Set instant preview
+  // Set instant preview & AUTO-SAVE immediately so it won't be lost when editing other items
   if (dataUrl) {
     if (preview) preview.src = dataUrl;
     if (urlInput) urlInput.value = dataUrl;
+    portfolioData.personalInfo.avatarImage = dataUrl;
+    syncLocalStorage();
   }
 
   // Try Firebase Storage upload
@@ -375,11 +409,19 @@ async function handleAvatarFileUpload(e) {
         if (preview) preview.src = cloudUrl;
         if (urlInput) urlInput.value = cloudUrl;
         if (fileInput) fileInput.disabled = false;
-        showNotice('✅ อัปโหลดขึ้น Firebase Storage สำเร็จ! กด "บันทึกข้อมูลโปรไฟล์" เพื่อบันทึกถาวร');
+        portfolioData.personalInfo.avatarImage = cloudUrl;
+        syncLocalStorage();
+        await saveFirebaseProfile(portfolioData.personalInfo);
+        showNotice('✅ อัปโหลดและบันทึกรูปภาพขึ้น Firebase Cloud เรียบร้อยแล้ว!');
         return;
       }
     } catch (err) {
       console.warn('[Avatar Upload] Firebase Storage upload error:', err);
+      // Auto-save compressed WebP image to Firestore directly so it won't disappear
+      portfolioData.personalInfo.avatarImage = dataUrl;
+      syncLocalStorage();
+      await saveFirebaseProfile(portfolioData.personalInfo);
+
       const errCode = err.code || err.message || '';
       let errDetail = 'กรุณาตรวจสอบ Storage Rules หรือเปิดใช้งาน Storage ใน Firebase Console';
       if (errCode.includes('unauthorized') || errCode.includes('permission')) {
@@ -388,10 +430,12 @@ async function handleAvatarFileUpload(e) {
         errDetail = 'ยังไม่ได้เปิดใช้งาน Storage ใน Firebase Console (bucket not found)';
       }
 
-      showNotice(`⚠️ Firebase Storage: ${errDetail}<br><span class="text-[11px] opacity-80">💡 ระบบได้บีบอัดรูปภาพและเก็บไว้ในฟอร์มให้แล้ว กด <b>"บันทึกข้อมูลโปรไฟล์"</b> เพื่อบันทึกลง Firestore ได้ทันที</span>`, true);
+      showNotice(`✅ บันทึกรูปภาพลง Firestore Cloud และเครื่องแล้ว!<br><span class="text-[11px] opacity-80">⚠️ หมายเหตุ Storage: ${errDetail} (รูปภาพจะแสดงผลตามปกติ)</span>`);
     }
   } else {
-    showNotice('✅ โหลดรูปภาพเรียบร้อย (กด <b>"บันทึกข้อมูลโปรไฟล์"</b> เพื่อบันทึก)');
+    portfolioData.personalInfo.avatarImage = dataUrl;
+    syncLocalStorage();
+    showNotice('✅ บันทึกรูปภาพลงในเครื่อง (LocalStorage) เรียบร้อยแล้ว');
   }
 
   if (fileInput) fileInput.disabled = false;
@@ -401,6 +445,12 @@ window.resetDefaultAvatar = function() {
   const defaultPath = 'assets/images/profile-avatar.svg';
   if (document.getElementById('avatarPreview')) document.getElementById('avatarPreview').src = defaultPath;
   if (document.getElementById('avatarUrlInput')) document.getElementById('avatarUrlInput').value = defaultPath;
+  portfolioData.personalInfo.avatarImage = defaultPath;
+  syncLocalStorage();
+  if (typeof isFirebaseConfigured === 'function' && isFirebaseConfigured()) {
+    saveFirebaseProfile(portfolioData.personalInfo);
+  }
+  showNotice('รีเซ็ตเป็นรูปอวตารเริ่มต้นเรียบร้อยแล้ว');
 };
 
 async function handleProfileSave(e) {
