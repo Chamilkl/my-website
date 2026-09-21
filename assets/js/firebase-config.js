@@ -126,18 +126,38 @@ async function saveFirebaseProfile(profileData) {
 
 /** Image Storage API */
 async function uploadFirebaseImage(file, folder = 'avatars') {
-  if (!firebaseStorage) return null;
-  try {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const storageRef = firebaseStorage.ref().child(fileName);
+  if (!firebaseStorage) {
+    throw new Error('Firebase Storage ยังไม่ได้ถูกตั้งค่าหรือเปิดใช้งาน');
+  }
 
-    const snapshot = await storageRef.put(file);
+  const fileExt = file.name ? file.name.split('.').pop() : 'webp';
+  const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+  const metadata = {
+    contentType: file.type || 'image/webp'
+  };
+
+  try {
+    const storageRef = firebaseStorage.ref().child(fileName);
+    const snapshot = await storageRef.put(file, metadata);
     const downloadURL = await snapshot.ref.getDownloadURL();
     return downloadURL;
   } catch (err) {
-    console.error('Firebase Storage upload error:', err);
-    return null;
+    console.warn('First bucket upload failed, attempting fallback bucket if applicable:', err);
+    
+    // If bucket-not-found and current bucket ends with firebasestorage.app, try appspot.com
+    if (err.code === 'storage/bucket-not-found' || err.code === 'storage/project-not-found') {
+      try {
+        const altStorage = firebase.app().storage('gs://my-portfolio-7e48e.appspot.com');
+        const altRef = altStorage.ref().child(fileName);
+        const altSnap = await altRef.put(file, metadata);
+        return await altSnap.ref.getDownloadURL();
+      } catch (altErr) {
+        console.error('Fallback bucket upload also failed:', altErr);
+        throw altErr;
+      }
+    }
+
+    throw err;
   }
 }
 

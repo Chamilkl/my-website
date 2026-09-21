@@ -489,6 +489,13 @@
 }' class="w-full p-3 font-mono text-xs bg-slate-950 border border-slate-700 text-slate-100 rounded-xl focus:outline-none focus:border-amber-400"></textarea>
             </div>
 
+            <div class="bg-amber-950/40 border border-amber-600/40 rounded-xl p-3 text-[11px] text-amber-200 space-y-1">
+              <p class="font-bold"><i class="fas fa-shield-alt mr-1"></i> คำแนะนำเพื่อให้ Firebase บันทึกรูปภาพและข้อมูลได้ไม่ติดสิทธิ์ (Security Rules):</p>
+              <p>• <b>Firestore Database > Rules:</b> ตั้งค่าเป็น <code class="bg-slate-900 px-1.5 py-0.5 rounded text-amber-300 font-mono">allow read, write: if true;</code></p>
+              <p>• <b>Storage > Rules:</b> ตั้งค่าเป็น <code class="bg-slate-900 px-1.5 py-0.5 rounded text-amber-300 font-mono">allow read, write: if true;</code></p>
+              <p class="text-slate-400 text-[10px] pt-1">* หากยังไม่ได้เปิดใช้งาน Storage หรือตั้ง Rules ไม่ผ่าน ระบบจะบีบอัดรูปให้เล็กและบันทึกตรงสู่ Firestore & LocalStorage ให้อัตโนมัติ</p>
+            </div>
+
             <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
               <span class="text-[11px] text-slate-500">* หากไม่ได้ใส่ Config ระบบจะ Fallback ไปใช้ LocalStorage และ data.js ดั้งเดิม</span>
               <div class="flex gap-2">
@@ -516,8 +523,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-storage-compat.js"></script>
-  <script src="assets/js/firebase-config.js?v=1.0.0"></script>
+  <script src="assets/js/firebase-config.js?v=1.0.1"></script>
   <script src="assets/js/data.js?v=1.0.2"></script>
-  <script src="assets/js/admin.js?v=1.0.2"></script>
+  <script src="assets/js/admin.js?v=1.0.3"></script>
 </body>
 </html>

@@ -269,35 +269,132 @@ function loadProfileForm() {
   if (document.getElementById('avatarPreview')) document.getElementById('avatarPreview').src = avatarUrl;
 }
 
+function compressImageFile(file, maxDimension = 500, quality = 0.82) {
+  return new Promise((resolve) => {
+    if (file.type === 'image/svg+xml') {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve({ file, dataUrl: e.target.result });
+      reader.onerror = () => resolve({ file, dataUrl: null });
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.src = objectUrl;
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxDimension) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        }
+      } else {
+        if (height > maxDimension) {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const dataUrl = canvas.toDataURL('image/webp', quality);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            resolve({ file, dataUrl });
+            return;
+          }
+          const compressedFile = new File([blob], (file.name || 'avatar').replace(/\.[^/.]+$/, "") + ".webp", {
+            type: "image/webp",
+            lastModified: Date.now(),
+          });
+          resolve({ file: compressedFile, dataUrl });
+        },
+        'image/webp',
+        quality
+      );
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      const reader = new FileReader();
+      reader.onload = (e) => resolve({ file, dataUrl: e.target.result });
+      reader.onerror = () => resolve({ file, dataUrl: null });
+      reader.readAsDataURL(file);
+    };
+  });
+}
+
 async function handleAvatarFileUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
 
-  // Upload to Firebase Cloud Storage if configured
-  if (typeof isFirebaseConfigured === 'function' && isFirebaseConfigured()) {
-    showNotice('กำลังอัปโหลดรูปภาพไปยัง Firebase Storage...');
-    const cloudUrl = await uploadFirebaseImage(file, 'avatars');
-    if (cloudUrl) {
-      const preview = document.getElementById('avatarPreview');
-      const urlInput = document.getElementById('avatarUrlInput');
-      if (preview) preview.src = cloudUrl;
-      if (urlInput) urlInput.value = cloudUrl;
-      showNotice('อัปโหลดรูปภาพขึ้น Firebase Storage สำเร็จ!');
-      return;
-    }
+  // Validate file type & size (max 8MB)
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
+  if (!validTypes.includes(file.type)) {
+    showNotice('❌ รองรับเฉพาะไฟล์รูปภาพ (JPG, PNG, WebP, GIF, SVG) เท่านั้น', true);
+    return;
+  }
+  if (file.size > 8 * 1024 * 1024) {
+    showNotice('❌ ไฟล์รูปภาพมีขนาดใหญ่เกิน 8MB กรุณาเลือกไฟล์ที่เล็กลง', true);
+    return;
   }
 
-  // Fallback to Data URL for LocalStorage
-  const reader = new FileReader();
-  reader.onload = function(event) {
-    const dataUrl = event.target.result;
-    const preview = document.getElementById('avatarPreview');
-    const urlInput = document.getElementById('avatarUrlInput');
-    
+  const preview = document.getElementById('avatarPreview');
+  const urlInput = document.getElementById('avatarUrlInput');
+  const fileInput = document.getElementById('avatarFileInput');
+  if (fileInput) fileInput.disabled = true;
+
+  showNotice('⏳ กำลังปรับขนาดและประมวลผลรูปภาพ...');
+
+  // Compress client-side
+  const { file: processedFile, dataUrl } = await compressImageFile(file, 500, 0.82);
+
+  // Set instant preview
+  if (dataUrl) {
     if (preview) preview.src = dataUrl;
     if (urlInput) urlInput.value = dataUrl;
-  };
-  reader.readAsDataURL(file);
+  }
+
+  // Try Firebase Storage upload
+  if (typeof isFirebaseConfigured === 'function' && isFirebaseConfigured()) {
+    showNotice('⏳ กำลังอัปโหลดไปยัง Google Firebase Storage...');
+    try {
+      const cloudUrl = await uploadFirebaseImage(processedFile, 'avatars');
+      if (cloudUrl) {
+        if (preview) preview.src = cloudUrl;
+        if (urlInput) urlInput.value = cloudUrl;
+        if (fileInput) fileInput.disabled = false;
+        showNotice('✅ อัปโหลดขึ้น Firebase Storage สำเร็จ! กด "บันทึกข้อมูลโปรไฟล์" เพื่อบันทึกถาวร');
+        return;
+      }
+    } catch (err) {
+      console.warn('[Avatar Upload] Firebase Storage upload error:', err);
+      const errCode = err.code || err.message || '';
+      let errDetail = 'กรุณาตรวจสอบ Storage Rules หรือเปิดใช้งาน Storage ใน Firebase Console';
+      if (errCode.includes('unauthorized') || errCode.includes('permission')) {
+        errDetail = 'Storage Rules ยังไม่อนุญาตให้อัปโหลด (unauthorized)';
+      } else if (errCode.includes('not-found')) {
+        errDetail = 'ยังไม่ได้เปิดใช้งาน Storage ใน Firebase Console (bucket not found)';
+      }
+
+      showNotice(`⚠️ Firebase Storage: ${errDetail}<br><span class="text-[11px] opacity-80">💡 ระบบได้บีบอัดรูปภาพและเก็บไว้ในฟอร์มให้แล้ว กด <b>"บันทึกข้อมูลโปรไฟล์"</b> เพื่อบันทึกลง Firestore ได้ทันที</span>`, true);
+    }
+  } else {
+    showNotice('✅ โหลดรูปภาพเรียบร้อย (กด <b>"บันทึกข้อมูลโปรไฟล์"</b> เพื่อบันทึก)');
+  }
+
+  if (fileInput) fileInput.disabled = false;
 }
 
 window.resetDefaultAvatar = function() {
@@ -612,16 +709,22 @@ window.resetAllDataToDefault = function() {
   location.reload();
 };
 
-function showNotice(msg) {
+let _noticeTimeout = null;
+function showNotice(msg, isError = false) {
   const notice = document.getElementById('adminNotice');
   const text = document.getElementById('adminNoticeText');
   if (notice && text) {
-    text.textContent = msg;
-    notice.className = 'p-4 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all bg-emerald-950/80 border-emerald-700 text-emerald-200';
+    if (_noticeTimeout) clearTimeout(_noticeTimeout);
+    text.innerHTML = msg;
+    if (isError) {
+      notice.className = 'p-4 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all bg-rose-950/90 border-rose-600 text-rose-200 shadow-xl';
+    } else {
+      notice.className = 'p-4 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all bg-emerald-950/90 border-emerald-600 text-emerald-200 shadow-xl';
+    }
     notice.classList.remove('hidden');
-    setTimeout(() => {
+    _noticeTimeout = setTimeout(() => {
       notice.classList.add('hidden');
-    }, 4000);
+    }, isError ? 8000 : 4000);
   }
 }
 
