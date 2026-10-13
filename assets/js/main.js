@@ -794,21 +794,34 @@ function renderCertificates(filter = 'all') {
   const certFilterBtns = document.querySelectorAll('.cert-filter-btn');
   if (!container || !portfolioData.certificates) return;
 
-  certFilterBtns.forEach(btn => {
-    if (btn.getAttribute('data-cert-filter') === filter) {
-      btn.classList.add('active');
-    } else {
-      btn.classList.remove('active');
+  const certs = portfolioData.certificates;
+
+  /* ── helper: does cert match filter ── */
+  function certMatchesFilter(c, f) {
+    if (f === 'all') return true;
+    const cat = (c.category || '').toLowerCase();
+    const badge = (c.badge || '').toLowerCase();
+    const title = (c.title || '').toLowerCase();
+    if (f === 'การบริหาร') {
+      // catch "การบริหาร & สตาร์ทอัพ", "ความฉลาดรู้ทางการเงิน", and similar
+      return cat.includes('การบริหาร') || cat.includes('การเงิน') ||
+             cat.includes('ธุรกิจ') || badge.includes('การเงิน') ||
+             title.includes('การเงิน') || title.includes('financial');
     }
+    return cat.includes(f.toLowerCase()) || badge.includes(f.toLowerCase()) || title.includes(f.toLowerCase());
+  }
+
+  /* ── update active state + count badges ── */
+  certFilterBtns.forEach(btn => {
+    const f = btn.getAttribute('data-cert-filter');
+    const count = f === 'all' ? certs.length : certs.filter(c => certMatchesFilter(c, f)).length;
+    // rebuild label (strip old badge-count span)
+    const rawLabel = btn.innerHTML.replace(/<span class="badge-count">.*?<\/span>/g, '').trim();
+    btn.innerHTML = `${rawLabel}<span class="badge-count">${count}</span>`;
+    btn.classList.toggle('active', f === filter);
   });
 
-  const filteredData = filter === 'all' 
-    ? portfolioData.certificates 
-    : portfolioData.certificates.filter(c => 
-        (c.category || '').toLowerCase().includes(filter.toLowerCase()) || 
-        (c.badge || '').toLowerCase().includes(filter.toLowerCase()) ||
-        (c.title || '').toLowerCase().includes(filter.toLowerCase())
-      );
+  const filteredData = certs.filter(c => certMatchesFilter(c, filter));
 
   if (filteredData.length === 0) {
     container.innerHTML = `
@@ -819,8 +832,8 @@ function renderCertificates(filter = 'all') {
     return;
   }
 
-  container.innerHTML = filteredData.map(cert => `
-    <div class="glass-panel p-6 rounded-2xl flex flex-col justify-between group hover:border-slate-500 transition-all">
+  container.innerHTML = filteredData.map((cert, idx) => `
+    <div class="glass-panel p-6 rounded-2xl flex flex-col justify-between group hover:border-slate-500 transition-all" style="animation-delay:${idx * 45}ms">
       <div>
         <div class="flex justify-between items-start mb-3">
           <span class="px-2.5 py-1 text-xs font-semibold rounded-md bg-slate-800 border border-slate-700 text-slate-200 flex items-center gap-1.5">
@@ -853,8 +866,9 @@ function renderCertificates(filter = 'all') {
 /* Cert filter delegation (called once at init) */
 function initCertFilterDelegation() {
   document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('cert-filter-btn')) {
-      const filter = e.target.getAttribute('data-cert-filter');
+    if (e.target.closest('.cert-filter-btn')) {
+      const btn = e.target.closest('.cert-filter-btn');
+      const filter = btn.getAttribute('data-cert-filter');
       renderCertificates(filter);
     }
   });

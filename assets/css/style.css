@@ -451,3 +451,64 @@ kbd {
   background: #fff;
 }
 
+/* ── Certificate Filter Buttons ─────────────────────────────── */
+.cert-filter-btn {
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 7px 16px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  white-space: nowrap;
+}
+
+.cert-filter-btn:hover {
+  background: rgba(100, 116, 139, 0.25);
+  color: #e2e8f0;
+  border-color: var(--accent-light);
+  transform: translateY(-1px);
+}
+
+.cert-filter-btn.active {
+  background: var(--accent-gray);
+  color: #f8fafc;
+  border-color: var(--accent-light);
+  box-shadow: 0 0 12px rgba(100, 116, 139, 0.35);
+}
+
+/* count badge on filter button */
+.cert-filter-btn .badge-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(148, 163, 184, 0.2);
+  color: #94a3b8;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 1.4em;
+  padding: 0 5px;
+  margin-left: 5px;
+  line-height: 1.6;
+  transition: background 0.25s, color 0.25s;
+}
+
+.cert-filter-btn.active .badge-count {
+  background: rgba(248, 250, 252, 0.25);
+  color: #f8fafc;
+}
+
+/* Fade animation for cert grid items */
+#certificatesGrid > div {
+  animation: certFadeIn 0.3s ease both;
+}
+
+@keyframes certFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
