@@ -2,7 +2,7 @@
  * Chamil Kalong Portfolio - Service Worker (Offline Support & Caching)
  */
 
-const CACHE_NAME = 'chamil-portfolio-v1.0.3';
+const CACHE_NAME = 'chamil-portfolio-v1.0.9';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

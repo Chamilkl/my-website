@@ -26,7 +26,17 @@ async function initCustomDevData() {
     if (storedEdu) portfolioData.education = JSON.parse(storedEdu);
 
     const storedCerts = localStorage.getItem('ck_portfolio_certificates');
-    if (storedCerts) portfolioData.certificates = JSON.parse(storedCerts);
+    if (storedCerts) {
+      try {
+        const parsed = JSON.parse(storedCerts);
+        const dataFiles = new Set(portfolioData.certificates.map(c => c.file));
+        const extraCerts = parsed.filter(c => !dataFiles.has(c.file));
+        portfolioData.certificates = [...portfolioData.certificates, ...extraCerts];
+        localStorage.setItem('ck_portfolio_certificates', JSON.stringify(portfolioData.certificates));
+      } catch (e) {
+        portfolioData.certificates = JSON.parse(storedCerts);
+      }
+    }
 
     const storedActs = localStorage.getItem('ck_portfolio_activities');
     if (storedActs) portfolioData.activities = JSON.parse(storedActs);

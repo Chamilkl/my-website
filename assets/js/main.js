@@ -1032,7 +1032,15 @@ async function loadCustomDevData() {
 
     const storedCerts = localStorage.getItem('ck_portfolio_certificates');
     if (storedCerts) {
-      portfolioData.certificates = JSON.parse(storedCerts);
+      try {
+        const parsed = JSON.parse(storedCerts);
+        const dataFiles = new Set(portfolioData.certificates.map(c => c.file));
+        const extraCerts = parsed.filter(c => !dataFiles.has(c.file));
+        portfolioData.certificates = [...portfolioData.certificates, ...extraCerts];
+        localStorage.setItem('ck_portfolio_certificates', JSON.stringify(portfolioData.certificates));
+      } catch (e) {
+        portfolioData.certificates = JSON.parse(storedCerts);
+      }
     }
 
     const storedActs = localStorage.getItem('ck_portfolio_activities');
@@ -1086,7 +1094,12 @@ async function loadCustomDevData() {
       }
 
       if (fbEdu && fbEdu.length > 0) { portfolioData.education = fbEdu; updated = true; }
-      if (fbCerts && fbCerts.length > 0) { portfolioData.certificates = fbCerts; updated = true; }
+      if (fbCerts && fbCerts.length > 0) {
+        const fbFiles = new Set(fbCerts.map(c => c.file));
+        const missingFromFb = portfolioData.certificates.filter(c => !fbFiles.has(c.file));
+        portfolioData.certificates = [...fbCerts, ...missingFromFb];
+        updated = true;
+      }
       if (fbActs && fbActs.length > 0) { portfolioData.activities = fbActs; updated = true; }
       if (fbProjs && fbProjs.length > 0) { portfolioData.projects = fbProjs; updated = true; }
 

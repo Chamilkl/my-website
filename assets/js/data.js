@@ -181,71 +181,126 @@ const portfolioData = {
   ],
 
   certificates: [
-    {
-      id: "cert-tcer002",
-      title: "ผู้ปฏิบัติงานด้านการขายระบบผลิตไฟฟ้าจากเซลล์แสงอาทิตย์ ระดับ 3",
-      organization: "สถาบันคุณวุฒิวิชาชีพ (องค์การมหาชน) - TPQI",
-      date: "17 กุมภาพันธ์ 2569",
-      category: "คุณวุฒิวิชาชีพ",
-      badge: "TPQI Level 3",
-      file: "cer/Certificate-TCER002-L3-TH.pdf",
-      icon: "fa-solar-panel",
-      description: "วุฒิบัตรการฝึกอบรมตามมาตรฐานอาชีพและคุณวุฒิวิชาชีพ สาขาวิชาชีพพลังงานและพลังงานทดแทน สาขาพลังงานไฟฟ้าจากเซลล์แสงอาทิตย์"
-    },
-    {
-      id: "cert-ms05",
-      title: "การพัฒนาสมรรถนะ Digital Literacy (2 ชั่วโมง)",
-      organization: "สถาบันคุณวุฒิวิชาชีพ (องค์การมหาชน) - TPQI",
-      date: "17 กุมภาพันธ์ 2569",
-      category: "ทักษะดิจิทัล",
-      badge: "TPQI Digital",
-      file: "cer/Certificate-MS05-TH.pdf",
-      icon: "fa-laptop-code",
-      description: "วุฒิบัตรการฝึกอบรมผ่านระบบการเรียนรู้สมรรถนะบุคคลด้านความเข้าใจและใช้เทคโนโลยีดิจิทัล ตามมาตรฐานอาชีพและคุณวุฒิวิชาชีพ"
-    },
-    {
-      id: "cert-bmd1006",
-      title: "Growth Management for Startup (SET e-Learning)",
-      organization: "ตลาดหลักทรัพย์แห่งประเทศไทย (SET)",
-      date: "17 กุมภาพันธ์ 2569",
-      category: "การบริหาร & สตาร์ทอัพ",
-      badge: "SET e-Learning",
-      file: "cer/Certificate-BMD1006-TH.pdf",
-      icon: "fa-chart-line",
-      description: "ผ่านการเรียน e-Learning ครบถ้วนตามหลักสูตรการจัดการการเติบโตสำหรับธุรกิจสตาร์ทอัพ (ระยะเวลา 50 นาที)"
-    },
-    {
-      id: "cert-fin-lit",
-      title: "วางแผนลงทุนเป็น (Financial Literacy สำหรับนิสิต/นักศึกษาครู)",
-      organization: "คุรุสภา (TPDI) x ก.ล.ต. x ธนาคารแห่งประเทศไทย",
-      date: "14 ตุลาคม 2568",
-      category: "ความฉลาดรู้ทางการเงิน",
-      badge: "คุรุสภา & ก.ล.ต.",
-      file: "cer/Certificate หน่วยการเรียนรู้ 4 วางแผนลงทุนเป็น หลักสูตรเสริมสร้างความฉลาดรู้ด้านการเงิน (Financial Literacy) สำหรับนิสิต_นักศึกษาครู.pdf",
-      icon: "fa-coins",
-      description: "ผ่านการอบรมหน่วยการเรียนรู้ที่ 4 ตามหลักสูตรเสริมสร้างความฉลาดรู้ด้านการเงิน โดยคุรุสภา สำนักงาน ก.ล.ต. และธนาคารแห่งประเทศไทย"
-    },
-    {
-      id: "cert-mirror-267",
-      title: "อาสาสมัครจัดเตรียมสิ่งของช่วยเหลือผู้ประสบภัยน้ำท่วม (13 ธ.ค. 2568)",
-      organization: "มูลนิธิกระจกเงา (The Mirror Foundation)",
-      date: "14 ธันวาคม 2568",
-      category: "จิตอาสา",
-      badge: "จิตอาสา & บริการสังคม",
-      file: "cer/ชามิล กาหลง 267 (13 ธันวา).pdf",
-      icon: "fa-hand-holding-heart",
-      description: "หนังสือรับรองการปฏิบัติหน้าที่อาสาสมัครจัดเตรียมสิ่งของบรรเทาทุกข์ช่วยเหลือผู้ประสบภัยน้ำท่วม"
-    },
-    {
-      id: "cert-mirror-279",
-      title: "อาสาสมัครจัดเตรียมสิ่งของช่วยเหลือผู้ประสบภัยน้ำท่วม (20 ธ.ค. 2568)",
-      organization: "มูลนิธิกระจกเงา (The Mirror Foundation)",
-      date: "21 ธันวาคม 2568",
-      category: "จิตอาสา",
-      badge: "จิตอาสา & บริการสังคม",
-      file: "cer/ชามิล กาหลง 279.pdf",
-      icon: "fa-hands-helping",
-      description: "หนังสือรับรองการเป็นอาสาสมัครกับมูลนิธิกระจกเงาในการจัดเตรียมและส่งมอบสิ่งของช่วยเหลือผู้ประสบภัย"
-    }
+      {
+          "id": "cert-fin-lit",
+          "title": "วางแผนลงทุนเป็น (Financial Literacy สำหรับนิสิต/นักศึกษาครู)",
+          "organization": "คุรุสภา (TPDI) x ก.ล.ต. x ธนาคารแห่งประเทศไทย",
+          "date": "14 ตุลาคม 2568",
+          "category": "ความฉลาดรู้ทางการเงิน",
+          "badge": "คุรุสภา & ก.ล.ต.",
+          "file": "cer/Certificate(Financial Literacy).pdf",
+          "icon": "fa-coins",
+          "description": "ผ่านการอบรมหน่วยการเรียนรู้ที่ 4 ตามหลักสูตรเสริมสร้างความฉลาดรู้ด้านการเงิน โดยคุรุสภา สำนักงาน ก.ล.ต. และธนาคารแห่งประเทศไทย"
+      },
+      {
+          "id": "cert-bmd1006",
+          "title": "Growth Management for Startup (SET e-Learning)",
+          "organization": "ตลาดหลักทรัพย์แห่งประเทศไทย (SET)",
+          "date": "17 กุมภาพันธ์ 2569",
+          "category": "การบริหาร & สตาร์ทอัพ",
+          "badge": "SET e-Learning",
+          "file": "cer/Certificate-BMD1006-TH.pdf",
+          "icon": "fa-chart-line",
+          "description": "ผ่านการเรียน e-Learning ครบถ้วนตามหลักสูตรการจัดการการเติบโตสำหรับธุรกิจสตาร์ทอัพ (ระยะเวลา 50 นาที)"
+      },
+      {
+          "id": "cert-dl3003",
+          "title": "Basic Cybersecurity (2 ชั่วโมง)",
+          "organization": "สถาบันคุณวุฒิวิชาชีพ (องค์การมหาชน) - TPQI",
+          "date": "13 ตุลาคม 2569",
+          "category": "ทักษะดิจิทัล",
+          "badge": "TPQI Cybersecurity",
+          "file": "cer/Certificate-DL3003-TH.pdf",
+          "icon": "fa-shield-alt",
+          "description": "วุฒิบัตรการอบรมสมรรถนะบุคคลด้านความมั่นคงปลอดภัยไซเบอร์เบื้องต้น (Basic Cybersecurity) ตามมาตรฐานคุณวุฒิวิชาชีพ"
+      },
+      {
+          "id": "cert-ict01",
+          "title": "ฮาร์ดแวร์ (Hardware) - อาชีพผู้ใช้คอมพิวเตอร์และระบบ ขั้น 3",
+          "organization": "สถาบันคุณวุฒิวิชาชีพ (องค์การมหาชน) - TPQI",
+          "date": "14 ตุลาคม 2569",
+          "category": "ทักษะดิจิทัล",
+          "badge": "TPQI Hardware",
+          "file": "cer/Certificate-ICT01-TH.pdf",
+          "icon": "fa-microchip",
+          "description": "วุฒิบัตรการฝึกอบรมสมรรถนะบุคคลด้านฮาร์ดแวร์คอมพิวเตอร์ (Hardware) สาขาวิชาชีพเทคโนโลยีสารสนเทศและการสื่อสาร ตามมาตรฐานคุณวุฒิวิชาชีพ"
+      },
+      {
+          "id": "cert-ms01",
+          "title": "Microsoft Word (3 ชั่วโมง)",
+          "organization": "สถาบันคุณวุฒิวิชาชีพ (องค์การมหาชน) - TPQI",
+          "date": "14 ตุลาคม 2569",
+          "category": "ทักษะดิจิทัล",
+          "badge": "TPQI MS Word",
+          "file": "cer/Certificate-MS01-TH.pdf",
+          "icon": "fa-file-word",
+          "description": "วุฒิบัตรการฝึกอบรมสมรรถนะบุคคลด้านการใช้โปรแกรมประมวลผลคำ Microsoft Word ตามมาตรฐานคุณวุฒิวิชาชีพ"
+      },
+      {
+          "id": "cert-ms05",
+          "title": "การพัฒนาสมรรถนะ Digital Literacy (2 ชั่วโมง)",
+          "organization": "สถาบันคุณวุฒิวิชาชีพ (องค์การมหาชน) - TPQI",
+          "date": "17 กุมภาพันธ์ 2569",
+          "category": "ทักษะดิจิทัล",
+          "badge": "TPQI Digital",
+          "file": "cer/Certificate-MS05-TH.pdf",
+          "icon": "fa-laptop-code",
+          "description": "วุฒิบัตรการฝึกอบรมผ่านระบบการเรียนรู้สมรรถนะบุคคลด้านความเข้าใจและใช้เทคโนโลยีดิจิทัล ตามมาตรฐานอาชีพและคุณวุฒิวิชาชีพ"
+      },
+      {
+          "id": "cert-ms07",
+          "title": "Microsoft Sway (2 ชั่วโมง)",
+          "organization": "สถาบันคุณวุฒิวิชาชีพ (องค์การมหาชน) - TPQI",
+          "date": "13 ตุลาคม 2569",
+          "category": "ทักษะดิจิทัล",
+          "badge": "TPQI MS Sway",
+          "file": "cer/Certificate-MS07-TH.pdf",
+          "icon": "fa-presentation",
+          "description": "วุฒิบัตรการฝึกอบรมสมรรถนะบุคคลด้านการนำเสนองานดิจิทัลด้วย Microsoft Sway ตามมาตรฐานคุณวุฒิวิชาชีพ"
+      },
+      {
+          "id": "cert-tcer002",
+          "title": "ผู้ปฏิบัติงานด้านการขายระบบผลิตไฟฟ้าจากเซลล์แสงอาทิตย์ ระดับ 3",
+          "organization": "สถาบันคุณวุฒิวิชาชีพ (องค์การมหาชน) - TPQI",
+          "date": "17 กุมภาพันธ์ 2569",
+          "category": "คุณวุฒิวิชาชีพ",
+          "badge": "TPQI Level 3",
+          "file": "cer/Certificate-TCER002-L3-TH.pdf",
+          "icon": "fa-solar-panel",
+          "description": "วุฒิบัตรการฝึกอบรมตามมาตรฐานอาชีพและคุณวุฒิวิชาชีพ สาขาวิชาชีพพลังงานและพลังงานทดแทน สาขาพลังงานไฟฟ้าจากเซลล์แสงอาทิตย์"
+      },
+      {
+          "id": "cert-tu-diversity",
+          "title": "ความหลากหลายในสถานที่ทำงาน (Diversity at Workplace - TU00012)",
+          "organization": "มหาวิทยาลัยธรรมศาสตร์ x Thai MOOC (สป.อว.)",
+          "date": "13 ตุลาคม 2569",
+          "category": "ทักษะดิจิทัล",
+          "badge": "Thai MOOC (TU)",
+          "file": "cer/dga-0c43aed3-79bc-42f4-85d9-f34f01dba3a8.pdf",
+          "icon": "fa-users",
+          "description": "วุฒิบัตรผ่านการอบรมรายวิชาความหลากหลายในสถานที่ทำงาน (Diversity at Workplace) มหาวิทยาลัยธรรมศาสตร์ ร่วมกับโครงการมหาวิทยาลัยไซเบอร์ไทย (Thai MOOC)"
+      },
+      {
+          "id": "cert-mirror-267",
+          "title": "อาสาสมัครจัดเตรียมสิ่งของช่วยเหลือผู้ประสบภัยน้ำท่วม (13 ธ.ค. 2568)",
+          "organization": "มูลนิธิกระจกเงา (The Mirror Foundation)",
+          "date": "14 ธันวาคม 2568",
+          "category": "จิตอาสา",
+          "badge": "จิตอาสา & บริการสังคม",
+          "file": "cer/krajokkung-hatyai13.pdf",
+          "icon": "fa-hand-holding-heart",
+          "description": "หนังสือรับรองการปฏิบัติหน้าที่อาสาสมัครจัดเตรียมสิ่งของบรรเทาทุกข์ช่วยเหลือผู้ประสบภัยน้ำท่วม อำเภอหาดใหญ่ จังหวัดสงขลา"
+      },
+      {
+          "id": "cert-mirror-279",
+          "title": "อาสาสมัครจัดเตรียมสิ่งของช่วยเหลือผู้ประสบภัยน้ำท่วม (20 ธ.ค. 2568)",
+          "organization": "มูลนิธิกระจกเงา (The Mirror Foundation)",
+          "date": "21 ธันวาคม 2568",
+          "category": "จิตอาสา",
+          "badge": "จิตอาสา & บริการสังคม",
+          "file": "cer/krajokkung-hatyai20.pdf",
+          "icon": "fa-hands-helping",
+          "description": "หนังสือรับรองการเป็นอาสาสมัครกับมูลนิธิกระจกเงาในการจัดเตรียมและส่งมอบสิ่งของช่วยเหลือผู้ประสบภัย อำเภอหาดใหญ่ จังหวัดสงขลา"
+      }
   ]
 };
